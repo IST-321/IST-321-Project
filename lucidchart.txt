@@ -1,4 +1,5 @@
 Below is the link to the group LucidChart, where diagrams, workflows, and processes can be mapped and expanded upon as needed. 
+You can also use the Lucid for VS Code extension in VS Code to link your account, allowing you to use LucidChart directly in VS Code. 
 
 ERD
 
