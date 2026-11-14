@@ -52,8 +52,20 @@ def pickup_days(week_only=False):
     return [x for x in out if x >= project_today().isoformat()] if not week_only else out
 
 
-def _equipment():
-    return [dict(r) for r in query_all("SELECT * FROM equipment ORDER BY id")]
+def _equipment(sid):
+    """Inventory as this student sees it. Each sign-in has its own copy, so only this
+    student's own open requests come off the counts."""
+    held = {(r["equipment_id"], r["loan_type"]): r["n"] for r in query_all(
+        """SELECT equipment_id, loan_type, COUNT(*) AS n FROM equipment_requests
+           WHERE student_id = ? AND status = 'Requested' GROUP BY equipment_id, loan_type""", (sid,))}
+    out = []
+    for r in query_all("SELECT * FROM equipment ORDER BY id"):
+        item = dict(r)
+        week = held.get((item["id"], "7 day"), 0)
+        item["available"] -= week + held.get((item["id"], "Semester"), 0)
+        item["seven_day"] -= week
+        out.append(item)
+    return out
 
 
 def _requests(sid):
@@ -73,7 +85,7 @@ def request_lock():
 
 
 def _state(sid):
-    return {"equipment": _equipment(), "requests": _requests(sid), "locked": request_lock()}
+    return {"equipment": _equipment(sid), "requests": _requests(sid), "locked": request_lock()}
 
 
 @bp.route("/mobile-campus")
@@ -94,7 +106,7 @@ def add_request():
     if lock:
         abort(409, description=lock)
     data = request.get_json(silent=True) or {}
-    item = query_one("SELECT * FROM equipment WHERE id = ?", (data.get("equipment_id"),))
+    item = next((e for e in _equipment(sid) if str(e["id"]) == str(data.get("equipment_id"))), None)
     if not item:
         abort(400, description="Choose a device to borrow.")
     loan = data.get("loan_type")
@@ -120,10 +132,6 @@ def add_request():
         (sid, item["id"], loan, pickup, due, (str(data.get("note") or "").strip()[:200] or None),
          project_now().isoformat(timespec="minutes")),
     )
-    # "available" counts every free unit; "seven_day" is the part of it kept for 7 day loans
-    db.execute("UPDATE equipment SET available = available - 1 WHERE id = ?", (item["id"],))
-    if loan == "7 day":
-        db.execute("UPDATE equipment SET seven_day = seven_day - 1 WHERE id = ?", (item["id"],))
     add_alert(sid, "campus", "Mobile Campus request saved",
               f"Pick up your {item['name']} in Student Center 128A on {nice_date(pickup, '%A, %B %d')}. Bring your Viking Card.",
               "laptop", "mobile_campus.index#my-requests")
@@ -142,8 +150,5 @@ def cancel_request(req_id):
         abort(409, description="Only requests that haven't been picked up can be canceled. Return checked out equipment to Mobile Campus.")
     db = get_db()
     db.execute("UPDATE equipment_requests SET status = 'Canceled' WHERE id = ?", (req_id,))
-    db.execute("UPDATE equipment SET available = available + 1 WHERE id = ?", (r["equipment_id"],))
-    if r["loan_type"] == "7 day":
-        db.execute("UPDATE equipment SET seven_day = seven_day + 1 WHERE id = ?", (r["equipment_id"],))
     db.commit()
     return jsonify(_state(sid))

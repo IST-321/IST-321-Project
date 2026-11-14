@@ -17,6 +17,7 @@ from navigation import GETTING_AROUND, RESOURCES_LINK, SERVICES
 FOOTER_LINKS = [
     {"label": "CampusNet", "url": "https://campusnet.csuohio.edu/"},
     {"label": "MyCSU", "url": "https://mycsu.csuohio.edu/"},
+    {"label": "Blackboard", "url": "https://www.csuohio.edu/center-for-elearning/blackboard-login"},
 ]
 
 

@@ -43,3 +43,7 @@ class Config:
     # Sample account for Magnus Viking.
     SAMPLE_STUDENT_ID = "2000000"
     SAMPLE_PASSWORD = "Vikes2026!"
+
+    # More sign-ins for testing. Each one starts with its own full copy of Magnus Viking's
+    # data and the same password, and changes in one never show up in another.
+    EXTRA_STUDENT_IDS = ["2000001", "2000002", "2000003"]

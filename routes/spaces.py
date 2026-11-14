@@ -112,8 +112,8 @@ def _taken(room, day, hour, sid):
     others = min(room["units"], others if others <= room["units"] else 0)
     if hour in ("12:00", "13:00", "16:00") and room["units"] == 1:  # busy times of day
         others = 1 if _hash(room["id"], day, "busy") % 2 else others
-    mine = query_one("""SELECT COUNT(*) AS n FROM room_bookings WHERE room = ? AND book_date = ? AND status = 'Reserved'
-                        AND start_time <= ? AND end_time > ?""", (room["id"], day, hour, hour))["n"]
+    mine = query_one("""SELECT COUNT(*) AS n FROM room_bookings WHERE student_id = ? AND room = ? AND book_date = ?
+                        AND status = 'Reserved' AND start_time <= ? AND end_time > ?""", (sid, room["id"], day, hour, hour))["n"]
     return min(room["units"], others + mine)
 
 
@@ -240,8 +240,9 @@ def book_room():
     if clashes and not data.get("confirm"):
         return jsonify(needs_confirm=True, conflicts=clashes)
     unit = next(u for u in range(1, room["units"] + 1)
-                if not query_one("""SELECT 1 FROM room_bookings WHERE room = ? AND unit = ? AND book_date = ? AND status = 'Reserved'
-                                    AND start_time < ? AND end_time > ?""", (room["id"], u, day, end, start)))
+                if not query_one("""SELECT 1 FROM room_bookings WHERE student_id = ? AND room = ? AND unit = ? AND book_date = ?
+                                    AND status = 'Reserved' AND start_time < ? AND end_time > ?""",
+                                 (sid, room["id"], u, day, end, start)))
     label = room["name"] + (f" {unit}" if room["units"] > 1 else "")
     db = get_db()
     note = "Reserved in Viking Hub. Bring your Viking Card to the Library Help Desk."

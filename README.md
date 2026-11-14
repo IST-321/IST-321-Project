@@ -26,6 +26,13 @@ To check that Flask installed correctly, run `python -m flask --version`.
 | CSU ID  | Password   |
 |---------|------------|
 | 2000000 | Vikes2026! |
+| 2000001 | Vikes2026! |
+| 2000002 | Vikes2026! |
+| 2000003 | Vikes2026! |
+
+Every ID signs in as Magnus Viking with his full sample data, but each one keeps its own copy.
+Clearing alerts, spending, bookings and other changes under one ID never show up under another.
+The extra IDs are listed in `EXTRA_STUDENT_IDS` in `config.py`.
 
 ## Project layout
 
@@ -59,6 +66,10 @@ The database at `database/viking_hub.db` is rebuilt from `seed.py` every time th
 - **Book a space**: Michael Schwartz Library rooms and Rec Center group fitness
 - **Settings** (from the profile menu): text size, alert types, sounds and motion
 - **Search**: the box in the top bar, or press / or Ctrl+K anywhere
+
+## Live moments (for presenting)
+
+Some pages get a new alert a few seconds after you open them, once per launch of the app: Home (4 s, advising appointment), Schedule (8 s, MTH 116 canceled today), Viking Card (6 s, $25 deposit), Parking (6 s, East Garage closing early), Announcements (4 s) and Orientation (5 s). The horn shakes, a card slides in, and the page updates. Edit the list in `LIVE_MOMENTS` in `seed.py`. They don't run while previewing another day.
 
 ## Optional files
 

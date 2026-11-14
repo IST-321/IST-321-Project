@@ -44,47 +44,47 @@ DEPOSITS = {
 def seed_all(db, config):
     """Fill each area that is still empty, so a database from an earlier
     phase picks up the new sample data without losing anything."""
-    sid = config["SAMPLE_STUDENT_ID"]
-
-    def empty(table, where="student_id = ?", params=(sid,)):
+    def empty(table, where="1 = 1", params=()):
         return db.execute(f"SELECT 1 FROM {table} WHERE {where} LIMIT 1", params).fetchone() is None
 
-    if empty("students"):
-        _seed_student(db, config)
-    if empty("viking_cards"):
-        _seed_card(db, sid)
-    if empty("alerts"):
-        _seed_alerts(db, sid)
-    if empty("pending_updates"):
-        _seed_pending_updates(db, sid)
-    if empty("announcements", "1 = 1", ()):
+    # Shared campus data, the same for every student
+    if empty("announcements"):
         _seed_announcements(db)
-    if empty("courses"):
-        _seed_courses(db, sid)
-    if empty("orientation_tasks", "1 = 1", ()):
-        _seed_orientation(db, sid)
-    if empty("assignments"):
-        _seed_assignments(db, sid)
-    if empty("events"):
-        _seed_events(db, sid)
-    if empty("parking_status", "1 = 1", ()):
+    if empty("orientation_tasks"):
+        _seed_orientation_tasks(db)
+    if empty("parking_status"):
         _seed_parking(db)
-    if empty("campus_events", "1 = 1", ()):
-        _seed_campus_events(db, sid)
-    if empty("equipment", "1 = 1", ()):
-        _seed_equipment(db, sid)
-    if empty("rec_classes", "1 = 1", ()):
+    if empty("campus_events"):
+        _seed_campus_event_list(db)
+    if empty("equipment"):
+        _seed_equipment_list(db)
+    if empty("rec_classes"):
         _seed_rec_classes(db)
-    if empty("grade_categories"):
-        _seed_grades(db, sid)
-    if empty("map_pins"):
-        db.execute("INSERT INTO map_pins (student_id, code, x, y, label, is_home) VALUES (?, 'FT', 426.9, 216.7, 'Fenn Tower', 1)", (sid,))
+
+    # Each sign-in gets its own full copy of Magnus Viking's data
+    for sid in [config["SAMPLE_STUDENT_ID"], *config.get("EXTRA_STUDENT_IDS", [])]:
+        if empty("students", "student_id = ?", (sid,)):
+            _seed_account(db, config, sid)
 
 
-def _seed_student(db, config):
+def _seed_account(db, config, sid):
+    _seed_student(db, config, sid)
+    _seed_card(db, sid)
+    _seed_alerts(db, sid)
+    _seed_pending_updates(db, sid)
+    _seed_courses(db, sid)
+    _seed_orientation_progress(db, sid)
+    _seed_assignments(db, sid)
+    _seed_events(db, sid)
+    _seed_added_events(db, sid)
+    _seed_loans(db, sid)
+    _seed_grades(db, sid)
+    db.execute("INSERT INTO map_pins (student_id, code, x, y, label, is_home) VALUES (?, 'FT', 426.9, 216.7, 'Fenn Tower', 1)", (sid,))
+
+
+def _seed_student(db, config, sid):
     password = config["SAMPLE_PASSWORD"]
     assert password_meets_policy(password), "Sample password must meet policy"
-    sid = config["SAMPLE_STUDENT_ID"]
     db.execute(
         """INSERT INTO students (student_id, first_name, last_name, email, password_hash)
            VALUES (?, ?, ?, ?, ?)""",
@@ -338,16 +338,21 @@ ORIENTATION_TASKS = [
 ]
 
 
-def _seed_orientation(db, sid):
+def _seed_orientation_tasks(db):
     for i, (cat, title, desc, req, label, link, status) in enumerate(ORIENTATION_TASKS):
-        cur = db.execute(
+        db.execute(
             """INSERT INTO orientation_tasks (position, category, title, description, requirement, link_label, link_url)
                VALUES (?, ?, ?, ?, ?, ?, ?)""",
             (i, cat, title, desc, req, label, link),
         )
+
+
+def _seed_orientation_progress(db, sid):
+    for i, task in enumerate(ORIENTATION_TASKS):
+        row = db.execute("SELECT id FROM orientation_tasks WHERE position = ?", (i,)).fetchone()
         db.execute(
             "INSERT INTO orientation_progress (student_id, task_id, status) VALUES (?, ?, ?)",
-            (sid, cur.lastrowid, status),
+            (sid, row[0], task[-1]),
         )
 
 
@@ -493,16 +498,20 @@ CAMPUS_EVENTS = [  # title, host, category, date, start, end, location, descript
 ADDED_EVENTS = ("Common hour trivia", "CABsino", "Vikings men's basketball home game")  # already on Magnus's schedule
 
 
-def _seed_campus_events(db, sid):
+def _seed_campus_event_list(db):
+    db.executemany(
+        """INSERT INTO campus_events (title, host, category, event_date, start_time, end_time, location, description)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""", CAMPUS_EVENTS)
+
+
+def _seed_added_events(db, sid):
     for row in CAMPUS_EVENTS:
-        cur = db.execute(
-            """INSERT INTO campus_events (title, host, category, event_date, start_time, end_time, location, description)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""", row)
         if row[0] in ADDED_EVENTS:
+            source = db.execute("SELECT id FROM campus_events WHERE title = ? AND event_date = ?", (row[0], row[3])).fetchone()
             db.execute(
                 """INSERT INTO events (student_id, kind, title, event_date, start_time, end_time, location, notes, source_id)
                    VALUES (?, 'campus', ?, ?, ?, ?, ?, ?, ?)""",
-                (sid, row[0], row[3], row[4], row[5], row[6], f"Hosted by {row[1]}.", cur.lastrowid),
+                (sid, row[0], row[3], row[4], row[5], row[6], f"Hosted by {row[1]}.", source[0]),
             )
 
 
@@ -517,15 +526,17 @@ EQUIPMENT = [  # name, kind, description, total, available, kept for 7 day loans
 ]
 
 
-def _seed_equipment(db, sid):
-    ids = {}
-    for row in EQUIPMENT:
-        ids[row[0]] = db.execute(
-            "INSERT INTO equipment (name, kind, description, total, available, seven_day) VALUES (?, ?, ?, ?, ?, ?)", row).lastrowid
+def _seed_equipment_list(db):
+    db.executemany(
+        "INSERT INTO equipment (name, kind, description, total, available, seven_day) VALUES (?, ?, ?, ?, ?, ?)", EQUIPMENT)
+
+
+def _seed_loans(db, sid):
+    calc = db.execute("SELECT id FROM equipment WHERE name = 'TI-84 graphing calculator'").fetchone()
     db.execute(
         """INSERT INTO equipment_requests (student_id, equipment_id, loan_type, pickup_date, due_date, status, created_at)
            VALUES (?, ?, 'Semester', '2026-08-25', '2026-12-12', 'Checked out', '2026-08-24T10:15')""",
-        (sid, ids["TI-84 graphing calculator"]))
+        (sid, calc[0]))
 
 
 # ---------------------------------------------------------------------------
