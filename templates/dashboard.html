@@ -1,23 +1,127 @@
+{% extends 'base.html' %}
+{% from 'partials/viking_card_visual.html' import viking_card_visual %}
+{% from 'partials/app_date.html' import app_date_picker with context %}
+{% macro walk_line(w) %}
+  <span class="walk-line">{{ icon('walk') }}
+    <span>{% if w.same %}{{ 'At your home building, ' ~ w.from if w.from_home else 'Same building as your last stop' }}{% else %}{{ w.minutes }} min walk from {{ w.from }}, leave by {{ w.leave_by_label }}{% endif %}</span>
+    {% if w.indoor %}<a class="walk-indoor" href="{{ url_for('campus_map.index', innerlink=1) }}">Indoor route: Innerlink</a>{% endif %}
+  </span>
+{% endmacro %}
+{% block title %}Home{% endblock %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyCSU Dashboard</title>
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-    <header>
-        <h1>MyCSU</h1>
-        <p>Student Information Portal</p>
+{% block content %}
+<section class="welcome">
+  <div class="welcome-text">
+    <p class="welcome-date">{{ today.strftime('%A, %B') }} {{ today.day }} {{ app_date_picker('Change day', 'on-dark') }}</p>
+    <h2>Welcome back, {{ student.first_name }}!</h2>
+  </div>
+  <img class="welcome-viking" src="{{ url_for('static', filename='images/viking-head.svg') }}" alt="">
+</section>
+
+{% if show_orientation %}
+<a class="strip-link" href="{{ url_for('orientation.index') }}">
+  <span class="row-icon">{{ icon('flag') }}</span>
+  <span class="row-text">
+    <strong>Orientation checklist</strong>
+    <span class="strip-progress">
+      <span class="meter"><span class="meter-fill" style="width: {{ orientation.percent }}%; display: block;"></span></span>
+      <small>{{ orientation.percent }}% complete · {{ orientation.complete }} of {{ orientation.total }} steps</small>
+    </span>
+  </span>
+  {{ icon('chevron-right', 'row-chevron') }}
+</a>
+{% endif %}
+
+<div class="home-grid">
+<div class="home-col">
+
+  {# ---------- Viking Card: the card itself lifts for tap to pay; the rest opens the card page ---------- #}
+  <section class="panel tile" data-panel-link="{{ url_for('viking_card.index') }}" aria-labelledby="card-title">
+    <header class="panel-head">
+      <h3 id="card-title">Viking Card</h3>
+      <span class="tile-go">{% if card.is_locked %}<span class="status status-locked">{{ icon('lock') }} Locked</span>{% endif %}{{ icon('chevron-right') }}</span>
     </header>
+    <div class="card-tile-body">
+      <div class="card-tile-art">{{ viking_card_visual(student, card, interactive=true) }}</div>
+      <dl class="stat-list">
+        <div><dt>Balance</dt><dd data-balance>{{ card.balance_cents|money }}</dd></div>
+        {% if meal %}<div><dt>Meal swipes left</dt><dd><span data-swipes>{{ meal.swipes_remaining }}</span> <small>of {{ meal.swipes_total }}</small></dd></div>{% endif %}
+      </dl>
+    </div>
+    <p class="tile-hint">{{ icon('info') }} Tap your card to use tap to pay.</p>
+  </section>
 
-    <main>
-        <h2>Welcome to MyCSU</h2>
-        <p>Your student information, schedule, and orientation in one place.</p>
-    </main>
-</body>
-</html>
+  {# ---------- Alerts ---------- #}
+  <section class="panel tile home-o3" data-panel-link="{{ url_for('dashboard.alerts_page') }}" aria-labelledby="alerts-title">
+    <header class="panel-head">
+      <h3 id="alerts-title">Alerts <span class="count" data-alert-count-inline></span></h3>
+      <span class="tile-go"><button class="text-btn" type="button" data-alerts-clear-all>Clear all</button>{{ icon('chevron-right') }}</span>
+    </header>
+    <ul class="alert-list" data-alert-list data-limit="3"></ul>
+    <p class="alert-empty" data-alert-empty hidden>You're all caught up.</p>
+  </section>
 
+</div>
+<div class="home-col">
+  {# ---------- Today's schedule: everything for the day in order, then what's next ---------- #}
+  <section class="panel tile day-panel home-o2" data-panel-link="{{ url_for('schedule.index') }}" aria-labelledby="today-title">
+    <header class="panel-head">
+      <h3 id="today-title">Today's schedule</h3>
+      <span class="tile-go">{{ icon('chevron-right') }}</span>
+    </header>
+    {% if plan %}
+    <ul class="class-list">
+      {% for c in plan %}
+        <li class="class-item k-{{ c.kind }}{% if c.past %} is-past{% endif %}{% if c.canceled %} is-canceled{% endif %}">
+          <div class="class-time"><strong>{{ c.start }}</strong>{% if c.end %}<small>{{ c.end }}</small>{% endif %}</div>
+          <div class="class-info">
+            <strong>{{ c.title }}{% if c.canceled %} <span class="tag-canceled">Canceled</span>{% endif %}</strong>
+            <small>{% if c.location %}{{ c.location }} · {% endif %}{{ c.detail }}</small>
+            {% if c.walk and not c.past %}{{ walk_line(c.walk) }}{% endif %}
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+      <p class="muted panel-pad">Nothing on your schedule today.</p>
+    {% endif %}
+    {% for c in online %}
+      <p class="online-note">{{ icon('laptop') }} <span><strong>{{ c.code }}</strong> is online with {{ c.professor }}.</span></p>
+    {% endfor %}
+    {% set ev = next_event %}
+    <a class="day-next" href="{{ url_for('events.index') }}">
+      <span class="row-icon">{{ icon('calendar') }}</span>
+      <span class="row-text">
+        <small>{{ 'Try during common hour' if ev and ev.suggested else 'Next on your schedule' }}</small>
+        {% if ev %}<strong>{{ ev.title }}</strong><span class="muted">{{ ev.when }} · {{ ev.location }}</span>
+        {% else %}<strong>No campus events coming up</strong><span class="muted">Browse what's happening on campus</span>{% endif %}
+      </span>
+      {{ icon('chevron-right', 'row-chevron') }}
+    </a>
+  </section>
+
+  {# ---------- Announcements ---------- #}
+  <section class="panel tile home-o4" data-panel-link="{{ url_for('dashboard.announcements_page') }}" aria-labelledby="ann-title">
+    <header class="panel-head">
+      <h3 id="ann-title">Announcements</h3>
+      <span class="tile-go">{{ icon('chevron-right') }}</span>
+    </header>
+    <ul class="news-list">
+      {% for a in announcements[:2] %}
+        <li>
+          <span class="row-icon">{{ icon(a.icon) }}</span>
+          <div><strong>{{ a.title }}</strong><p>{{ a.body }}</p></div>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+</div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+{% if just_signed_in %}
+<script>document.addEventListener('DOMContentLoaded', () => VH.toast({{ ('Welcome back, ' ~ student.first_name ~ '!')|tojson }}));</script>
+{% endif %}
+{% endblock %}

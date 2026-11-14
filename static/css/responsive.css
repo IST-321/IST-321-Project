@@ -1,0 +1,133 @@
+/* =========================================================
+   CSU Viking Hub: tablet and desktop
+   ========================================================= */
+
+@media (min-width: 640px) {
+  .content { padding: 20px 22px 32px; }
+  .appbar-inner { padding: 0 16px 0 12px; }
+  .profile-text { display: block; padding-right: 10px; }
+  .welcome { padding: 24px 28px; }
+  .welcome h2 { font-size: 1.6rem; }
+  .welcome-viking { width: 92px; }
+  .home-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+  .home-grid .panel { margin-bottom: 0; }
+  .home-grid .home-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  .vc-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+}
+
+/* Desktop: sidebar sits beside the page and can be collapsed; no bottom bar */
+@media (min-width: 960px) {
+  :root { --appbar-h: 68px; --sidebar-w: 264px; }
+  .app { padding-bottom: 0; }
+  .bottom-nav { display: none !important; }
+  .toast-region { bottom: 24px; }
+  .txn-list.is-expanded + .txn-toggle { bottom: 0; }
+
+  .appbar-inner { max-width: none; padding: 0 24px 0 14px; }
+  .brand-desktop-only, .appbar-divider { display: block; }
+  .appbar-divider { width: 1px; height: 28px; background: rgba(255, 255, 255, .3); margin: 0 8px 0 12px; }
+  .appbar-title { font-size: 1.15rem; }
+  .signout-form { display: block; margin-left: 4px; }
+  /* The name, picture and ID open the profile menu; sign out also has its own button */
+  .profile-caret { display: inline-flex; }
+  .alerts-popover { right: 0; }
+
+  .sidebar {
+    top: var(--appbar-h); width: var(--sidebar-w); z-index: 30;
+    transform: none; visibility: visible; box-shadow: none; transition: transform .25s var(--ease), visibility .25s;
+  }
+  .sidebar-backdrop { display: none !important; }
+  .shell { margin-left: var(--sidebar-w); transition: margin-left .25s var(--ease); }
+  html.nav-collapsed .sidebar { transform: translateX(-102%); visibility: hidden; }
+  html.nav-collapsed .shell { margin-left: 0; }
+  .content { padding: 24px 32px 36px; }
+}
+
+@media (min-width: 1280px) {
+  .welcome-viking { width: 104px; }
+}
+
+/* Sign in: brand panel beside the form, with Magnus in the background */
+@media (min-width: 960px) {
+  .auth-layout { flex-direction: row; }
+  .auth-brand {
+    flex: 0 0 50%; display: flex; flex-direction: column; justify-content: center; gap: 40px;
+    padding: 40px 56px; min-height: 100vh;
+  }
+  .auth-brand-logo { position: absolute; top: 40px; left: 56px; width: 240px; margin: 0; }
+  .auth-brand-body { display: block; position: relative; z-index: 1; max-width: 560px; }
+  .auth-brand-name { font-size: .95rem; font-weight: 600; color: #c9eeb0; margin-bottom: 8px; }
+  .auth-brand-slogan { font-size: 2.3rem; font-weight: 700; line-height: 1.15; margin-bottom: 28px; max-width: 460px; }
+  .auth-features { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .auth-features li {
+    display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px;
+    border-radius: 12px; background: rgba(255, 255, 255, .1); border: 1px solid rgba(255, 255, 255, .14);
+  }
+  .auth-features .icon { color: var(--green-fresh); margin-top: 2px; }
+  .auth-features strong { display: block; font-size: .95rem; }
+  .auth-features span { display: block; font-size: .85rem; color: rgba(255, 255, 255, .8); line-height: 1.35; }
+  .auth-brand-viking {
+    display: block; position: absolute; right: -70px; bottom: -50px; width: 420px;
+    opacity: .12; filter: grayscale(1) brightness(3); pointer-events: none;
+  }
+  .auth-main { justify-content: center; padding: 40px 32px; }
+  .auth-card { margin-top: 0; padding: 34px 32px 28px; }
+}
+
+@media (min-width: 720px) {
+  .task { grid-template-columns: 28px minmax(0, 1fr) auto; }
+  .task-mark { grid-row: auto; }
+  .task-status { grid-column: 3; grid-row: 1; align-self: start; margin-top: 0; }
+  .resource-grid { grid-template-columns: 1fr 1fr; }
+  .resource-grid li:nth-child(2) { border-top: 0; }
+  .directory { display: grid; grid-template-columns: 1fr 1fr; }
+}
+
+@media (min-width: 900px) {
+  .sch-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+  .sch-pair .panel { margin-bottom: 16px; }
+}
+
+@media (min-width: 960px) {
+  .map-below { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 16px; align-items: start; }
+  .map-below .panel { margin-bottom: 0; }
+}
+
+/* Phase 4 layouts */
+@media (min-width: 720px) {
+  .escort-band { grid-template-columns: minmax(0, 1fr) auto; align-items: center; padding: 24px 26px; }
+  .escort-actions { max-width: 320px; }
+  .escort-actions .btn { width: 100%; justify-content: center; }
+  .tr-two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+  .garage { grid-template-columns: minmax(0, 1fr) 110px 86px; }
+  .garage-map { grid-column: auto; }
+  .ev { grid-template-columns: 60px minmax(0, 1fr) auto; }
+  .ev-actions { grid-column: auto; flex-direction: column; align-items: flex-end; align-self: start; }
+}
+@media (min-width: 960px) {
+  .report-grid { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); align-items: start; }
+  .mc-layout { grid-template-columns: minmax(0, 1fr) 340px; align-items: start; }
+  .club-list { grid-template-columns: 1fr 1fr; align-items: start; }
+}
+@media (max-width: 639px) {
+  .club-more { padding-left: 14px; }
+  .form-grid { grid-template-columns: 1fr; }
+  .choice-list.two-col { grid-template-columns: 1fr; }
+}
+@media (min-width: 960px) {
+  .stop-key { grid-template-columns: 1fr 1fr; column-gap: 16px; }
+  .escort-info { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 0 28px; align-items: start; }
+}
+
+@media (min-width: 960px) {
+  .grade-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+}
+
+/* Schedule: import and export side by side, course tools as one bar underneath */
+@media (min-width: 860px) {
+  .cal-files { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; }
+  .cal-part { padding-right: 22px; }
+  .cal-part + .cal-part { padding: 0 0 0 22px; border-top: 0; border-left: 1px solid var(--border); }
+  .tools-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .tools-row li + li { border-top: 0; border-left: 1px solid var(--border); }
+}

@@ -1,0 +1,7 @@
+{# Tabs between the planner and the grade tracker #}
+<nav class="ga-tabs" aria-label="Schedule">
+  {% for endpoint, label, ic in [('schedule.index', 'Planner', 'calendar'), ('grades.index', 'Grades', 'book')] %}
+    <a class="ga-tab {% if current_endpoint == endpoint %}is-on{% endif %}" href="{{ url_for(endpoint) }}"
+       {% if current_endpoint == endpoint %}aria-current="page"{% endif %}>{{ icon(ic) }}<span>{{ label }}</span></a>
+  {% endfor %}
+</nav>

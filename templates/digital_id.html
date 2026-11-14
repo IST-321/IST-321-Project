@@ -1,1 +1,71 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
 
+{% block title %}Viking Card | MyCSU{% endblock %}
+{% block body_class %}page-app{% endblock %}
+
+{% block content %}
+<main id="main" class="app-main">
+  <div class="column">
+    <h1 class="page-title">Viking Card</h1>
+    <p class="page-lede">Your digital ID and balance.</p>
+
+    {# ----- Viking Card ----- #}
+    <img
+      class="viking-card"
+      src="{{ url_for('static', filename='images/viking-card.png') }}"
+      alt="Your Viking Card">
+
+    {# ----- Balance ----- #}
+    <section class="card balance-card" aria-label="Balance">
+      <div>
+        <p class="balance-label">Viking Card balance</p>
+        <p class="balance-amount">{{ balance }}</p>
+      </div>
+      <button type="button" class="btn btn--solid">
+        {{ icon('plus') }}<span>Add funds</span>
+      </button>
+    </section>
+
+    {# ----- Recent activity ----- #}
+    <section class="card panel" aria-labelledby="activity-heading">
+      <div class="panel-head">
+        <h2 id="activity-heading" class="panel-title">Recent activity</h2>
+        <button type="button" class="btn btn--text btn--small">
+          <span>See all</span>{{ icon('chevron-right') }}
+        </button>
+      </div>
+      <ul class="plain-list">
+        {% for tx in transactions %}
+        <li class="tx-row">
+          <span class="tx-icon tx-icon--{{ tx.kind }}">
+            {% if tx.kind == 'deposit' %}{{ icon('plus-circle') }}
+            {% elif tx.kind == 'dining' %}{{ icon('fork') }}
+            {% else %}{{ icon('bag') }}{% endif %}
+          </span>
+          <div class="tx-info">
+            <p class="row-title">{{ tx.name }}</p>
+            <p class="row-meta">{{ tx.when_label }}</p>
+          </div>
+          <div class="tx-amount">
+            <p class="tx-change{% if tx.amount > 0 %} is-deposit{% endif %}">{{ tx.amount_label }}</p>
+            <p class="row-meta">Balance {{ tx.balance_label }}</p>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+  </div>
+</main>
+{% endblock %}
+
+{% block footer %}
+<footer class="app-footer">
+  <p class="footer-help">
+    Have a problem? Contact the
+    <a href="https://www.csuohio.edu/vikingcard/online-card-office" target="_blank" rel="noopener noreferrer">Viking Card Office</a>
+    or
+    <a href="https://www.csuohio.edu/access-security/submit-access-requests" target="_blank" rel="noopener noreferrer">ARR</a>
+  </p>
+</footer>
+{% endblock %}

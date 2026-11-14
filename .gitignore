@@ -1,1 +1,6 @@
-
+__pycache__/
+*.pyc
+.venv*/
+venv/
+database/viking_hub.db
+database/.secret_key

@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="ev-page" data-ev-page>
+
+  <section class="ev-intro">
+    <div>
+      <p class="muted">Campus events, club meetings and Vikings games for the rest of the semester. Add one to your schedule and Viking Hub checks it against your classes.</p>
+      <p class="common-note">{{ icon('clock') }} <span><strong>Common hour</strong> is Tuesdays and Thursdays, 11:30 AM to 12:30 PM. No classes meet then, so it's when many clubs do.</span></p>
+    </div>
+    <a class="btn btn-primary" href="{{ vikesconnect }}" target="_blank" rel="noopener">Open VikesConnect {{ icon('external') }}</a>
+  </section>
+
+  {# ---------- Upcoming events ---------- #}
+  <section class="panel" aria-labelledby="events-title">
+    <header class="panel-head ev-head">
+      <h3 id="events-title">Upcoming events</h3>
+      <div class="chip-row" role="group" aria-label="Show">
+        <button class="chip is-on" type="button" data-ev-filter="">All</button>
+        <button class="chip" type="button" data-ev-filter="Campus event">Campus events</button>
+        <button class="chip" type="button" data-ev-filter="Club meeting">Club meetings</button>
+        <button class="chip" type="button" data-ev-filter="Athletics">Athletics</button>
+        <button class="chip" type="button" data-ev-filter="mine">On my schedule</button>
+      </div>
+    </header>
+    <ul class="ev-list" data-ev-list></ul>
+  </section>
+
+  {# ---------- Student organizations ---------- #}
+  <section class="panel" id="clubs" aria-labelledby="clubs-title">
+    <header class="panel-head">
+      <div><h3 id="clubs-title">Student organizations</h3>
+        <p class="muted small">A few of CSU's 200+ organizations. Select one to learn more and apply.</p></div>
+      <a class="link" href="{{ vikesconnect }}" target="_blank" rel="noopener">See them all {{ icon('external') }}</a>
+    </header>
+    <ul class="club-list">
+      {% for c in clubs %}
+        <li class="club tone-{{ c.tone }} {% if c.slug in applied %}is-applied{% endif %}" data-club="{{ c.slug }}">
+          <button class="club-toggle" type="button" aria-expanded="false" aria-controls="club-{{ c.slug }}">
+            <span class="club-emblem">
+              {{ icon(c.icon) }}
+              <span class="club-badge" title="Applied">{{ icon('check') }}</span>
+            </span>
+            <span class="club-text">
+              <strong>{{ c.name }}</strong>
+              <small>{{ c.short }}</small>
+            </span>
+            <span class="club-state" data-club-state>{% if c.slug in applied %}Applied{% endif %}</span>
+            {{ icon('chevron-right', 'club-chevron') }}
+          </button>
+          <div class="club-more" id="club-{{ c.slug }}" hidden>
+            <p>{{ c.about }}</p>
+            <dl class="club-facts">
+              <div><dt>Category</dt><dd>{{ c.category }}</dd></div>
+              <div><dt>Meets</dt><dd>{{ c.meets }}</dd></div>
+              <div><dt>Where</dt><dd>{{ c.where }}</dd></div>
+            </dl>
+            <div class="club-actions">
+              <button class="btn btn-primary" type="button" data-apply="{{ c.slug }}" {% if c.slug in applied %}disabled{% endif %}>
+                {% if c.slug in applied %}Application submitted{% else %}Apply to join{% endif %}
+              </button>
+              <a class="link" href="{{ vikesconnect }}" target="_blank" rel="noopener">Find it on VikesConnect {{ icon('external') }}</a>
+            </div>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <div class="tr-two">
+    <section class="panel" aria-labelledby="ann-title">
+      <header class="panel-head"><h3 id="ann-title">University announcements</h3><a class="link small" href="{{ url_for('dashboard.announcements_page') }}">All announcements</a></header>
+      <ul class="notice-list">
+        {% for a in announcements %}
+          <li><span class="row-icon">{{ icon(a.icon) }}</span><div><strong>{{ a.title }}</strong><p>{{ a.body }}</p></div></li>
+        {% endfor %}
+      </ul>
+    </section>
+    <section class="panel" aria-labelledby="cce-title">
+      <header class="panel-head"><h3 id="cce-title">{{ engagement.name }}</h3></header>
+      <div class="panel-pad">
+        <p class="muted">Questions about joining or starting an organization? The Center for Campus Engagement supports every recognized student organization. To start your own, you need three friends and a faculty or staff advisor.</p>
+        <ul class="contact-list">
+          <li>{{ icon('pin') }} {{ engagement.where }}</li>
+          <li>{{ icon('phone') }} <a href="tel:+1{{ engagement.phone|replace('-', '') }}">{{ engagement.phone }}</a></li>
+          <li>{{ icon('mail') }} <a href="mailto:{{ engagement.email }}">{{ engagement.email }}</a></li>
+          <li>{{ icon('clock') }} {{ engagement.hours }}</li>
+        </ul>
+        <a class="link" href="{{ engagement.url }}" target="_blank" rel="noopener">About VikesConnect {{ icon('external') }}</a>
+      </div>
+    </section>
+  </div>
+</div>
+
+{# ---------- Club application ---------- #}
+<dialog class="dialog app-dialog" id="apply-dialog" aria-labelledby="apply-title">
+  <form data-apply-form novalidate>
+    <h2 id="apply-title">Apply to <span data-apply-name></span></h2>
+    <p class="dialog-body">The same questions organizations ask in their VikesConnect membership forms. Officers usually reply within a week.</p>
+    <fieldset class="app-section">
+      <legend>About you</legend>
+      <div class="form-grid">
+        <label class="form-field"><span class="field-label">Name</span><input class="text-input" value="{{ student.first_name }} {{ student.last_name }}" readonly></label>
+        <label class="form-field"><span class="field-label">CSU ID</span><input class="text-input" value="{{ student.student_id }}" readonly></label>
+      </div>
+      <label class="form-field"><span class="field-label">CSU email</span><input class="text-input" value="{{ student.email }}" readonly></label>
+      <div class="form-grid">
+        <label class="form-field"><span class="field-label">Major</span><input class="text-input" name="major" maxlength="80" placeholder="Or Undecided"></label>
+        <label class="form-field"><span class="field-label">Class standing</span>
+          <select class="text-input" name="standing"><option value="">Choose one</option>{% for s in standings %}<option {% if s == 'First year' %}selected{% endif %}>{{ s }}</option>{% endfor %}</select></label>
+      </div>
+      <div class="form-grid">
+        <label class="form-field"><span class="field-label">Expected graduation</span><input class="text-input" name="graduation" maxlength="20" value="Spring 2030"></label>
+        <label class="form-field"><span class="field-label">Phone <span class="muted">(optional)</span></span><input class="text-input" name="phone" type="tel" maxlength="20"></label>
+      </div>
+    </fieldset>
+    <fieldset class="app-section">
+      <legend>About your interest</legend>
+      <label class="form-field"><span class="field-label">Why do you want to join?</span>
+        <textarea class="textarea" name="why" maxlength="600"></textarea></label>
+      <label class="form-field"><span class="field-label" data-apply-question></span>
+        <textarea class="textarea short" name="club_answer" maxlength="600"></textarea></label>
+      <label class="form-field"><span class="field-label">How did you hear about us?</span>
+        <select class="text-input" name="heard"><option value="">Choose one</option>{% for h in heard %}<option>{{ h }}</option>{% endfor %}</select></label>
+      <fieldset class="choice-list two-col">
+        <legend class="field-label">When are you usually free?</legend>
+        {% for a in availability %}<label class="choice"><input type="checkbox" name="availability" value="{{ a }}"><span>{{ a }}</span></label>{% endfor %}
+      </fieldset>
+    </fieldset>
+    <label class="check agree"><input type="checkbox" name="agree"><span class="check-box" aria-hidden="true">{{ icon('check') }}</span>
+      <span>I'll follow the CSU Student Code of Conduct and the organization's constitution.</span></label>
+    <p class="field-error" data-apply-error></p>
+    <div class="dialog-actions">
+      <button class="btn btn-ghost" type="button" data-apply-cancel>Cancel</button>
+      <button class="btn btn-primary" type="submit">Submit application</button>
+    </div>
+  </form>
+</dialog>
+
+<script type="application/json" id="ev-data">{{ {"events": events, "clubs": clubs, "applied": applied}|tojson }}</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/events.js') }}"></script>
+{% endblock %}

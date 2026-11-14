@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="panel page-panel" aria-labelledby="ann-page-title">
+  <header class="panel-head">
+    <h2 id="ann-page-title">Campus announcements</h2>
+    <label class="alert-filter"><span class="visually-hidden">Show</span>
+      <select data-ann-filter>
+        <option value="">All announcements</option>
+        {% for c in categories %}<option>{{ c }}</option>{% endfor %}
+      </select>
+    </label>
+  </header>
+  <ul class="news-list" data-ann-list>
+    {% for a in announcements %}
+      <li data-cat="{{ a.category }}">
+        <span class="row-icon">{{ icon(a.icon) }}</span>
+        <div>
+          <span class="news-cat">{{ a.category }}</span>
+          <strong>{{ a.title }}</strong>
+          <p>{{ a.body }}</p>
+          <small>Posted {{ a.posted_on|nice_date('%B %d, %Y') }}</small>
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
+  <p class="alert-empty" data-ann-none hidden>No announcements in this category.</p>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (() => {
+    const pick = document.querySelector("[data-ann-filter]");
+    pick.addEventListener("change", () => {
+      let shown = 0;
+      document.querySelectorAll("[data-ann-list] li").forEach((li) => {
+        li.hidden = pick.value && li.dataset.cat !== pick.value;
+        if (!li.hidden) shown++;
+      });
+      document.querySelector("[data-ann-none]").hidden = shown > 0;
+    });
+  })();
+</script>
+{% endblock %}

@@ -1,1 +1,44 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
 
+{% block title %}Orientation | MyCSU{% endblock %}
+{% block body_class %}page-app{% endblock %}
+
+{% block content %}
+<main id="main" class="app-main">
+  <div class="column">
+    <h1 class="page-title">Orientation</h1>
+    <p class="page-lede">As you complete tasks, CSU will coordinate with the app to approve your accomplished tasks.</p>
+
+    <section class="card progress-card" aria-label="Progress">
+      <p class="progress-label"><strong>{{ approved_count }} of {{ total_count }}</strong> tasks approved</p>
+      <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="{{ total_count }}" aria-valuenow="{{ approved_count }}" aria-label="Approved orientation tasks">
+        <div class="progress-fill" style="width: {{ (approved_count / total_count * 100)|round|int }}%;"></div>
+      </div>
+    </section>
+
+    <ol class="task-list">
+      {% for task in tasks %}
+      <li class="task card status-{{ task.status }}">
+        <span class="task-icon">
+          {% if task.status == 'approved' %}{{ icon('check-circle') }}
+          {% elif task.status == 'pending' %}{{ icon('clock') }}
+          {% else %}{{ icon('circle') }}{% endif %}
+        </span>
+        <div class="task-body">
+          <p class="task-title">{{ task.title }}</p>
+          <p class="task-text">
+            {%- for part in task.text -%}
+              {%- if part is string -%}{{ part }}
+              {%- else -%}<a href="{{ part.href }}" target="_blank" rel="noopener noreferrer">{{ part.label }}</a>
+              {%- endif -%}
+            {%- endfor -%}
+          </p>
+          <p class="task-status"><span class="status-chip">{{ status_labels[task.status] }}</span></p>
+        </div>
+      </li>
+      {% endfor %}
+    </ol>
+  </div>
+</main>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="grades-page" data-grades>
+{% include 'partials/schedule_tabs.html' %}
+
+  <section class="panel grades-intro">
+    <div class="panel-pad">
+      <p>Track your scores against each syllabus to see where you stand and what you need on the work that's left. Your official grades are in <a class="link" href="https://campusnet.csuohio.edu/" target="_blank" rel="noopener">CampusNet {{ icon('external') }}</a>.</p>
+      <p class="muted small">Every class starts with the same standard sections and letter scale. Blackboard doesn't share syllabus weights, so use <strong>Edit sections</strong> on a class to match its syllabus. Classes you've set up are marked "Set up by you".</p>
+    </div>
+  </section>
+
+  <div class="grade-grid" data-grade-list></div>
+</div>
+
+<dialog class="dialog g-dialog" id="g-dialog" aria-labelledby="g-dialog-title">
+  <form method="dialog" data-setup-form novalidate>
+    <h2 id="g-dialog-title">Sections and scale</h2>
+    <p class="dialog-body muted small">Match these to the grading breakdown in your syllabus. Removing a section also removes its scores.</p>
+    <h3 class="field-label">Sections</h3>
+    <ul class="g-sec-list" data-sec-list></ul>
+    <div class="g-sec-foot">
+      <button class="btn btn-ghost btn-sm" type="button" data-sec-add>{{ icon('plus') }}<span>Add section</span></button>
+      <span class="g-total" data-sec-total></span>
+    </div>
+    <h3 class="field-label">Letter scale</h3>
+    <p class="muted small">The lowest percentage that earns each letter.</p>
+    <div class="g-scale" data-scale></div>
+    <p class="field-error" data-setup-error></p>
+    <div class="dialog-actions g-dialog-actions">
+      <button class="btn btn-ghost danger-text" type="button" data-setup-reset>Use standard sections</button>
+      <span class="spacer"></span>
+      <button class="btn btn-ghost" value="cancel" formnovalidate>Cancel</button>
+      <button class="btn btn-primary" type="button" data-setup-save>Save</button>
+    </div>
+  </form>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+<script type="application/json" id="grades-data">{{ {'courses': courses, 'targets': targets, 'standard': standard}|tojson }}</script>
+<script src="{{ url_for('static', filename='js/grades.js') }}"></script>
+{% endblock %}

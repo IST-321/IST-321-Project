@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="tr-page" data-tr-page>
+  {% include 'partials/getting_around_tabs.html' %}
+
+  {# ---------- Notices ---------- #}
+  <section class="panel" aria-labelledby="notices-title">
+    <header class="panel-head"><h3 id="notices-title">Parking and transportation notices</h3></header>
+    <ul class="notice-list">
+      {% for n in notices %}
+        <li><span class="row-icon">{{ icon(n.icon) }}</span><div><strong>{{ n.title }}</strong><p>{{ n.text }}</p></div></li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  {# ---------- Parking right now ---------- #}
+  <section class="panel" id="parking" aria-labelledby="parking-title">
+    <header class="panel-head">
+      <div>
+        <h3 id="parking-title">Parking right now</h3>
+        <p class="muted small" data-park-updated>Estimated open spaces</p>
+      </div>
+      <button class="btn btn-ghost btn-sm" type="button" data-park-refresh>{{ icon('refresh') }}<span>Update</span></button>
+    </header>
+    {% if app_day.moved %}<p class="lock-note">{{ icon('lock') }}<span>These counts are from November 12. Future parking isn't known, so they don't change while you preview another day.</span></p>{% endif %}
+    <ul class="garage-list" data-garages></ul>
+  </section>
+
+  {# ---------- Where can I park? ---------- #}
+  <section class="panel" aria-labelledby="where-title">
+    <header class="panel-head"><h3 id="where-title">Where can I park?</h3></header>
+    <div class="panel-pad">
+      <div class="where-controls">
+        <label class="form-field"><span class="field-label">Permit</span>
+          <select class="text-input" data-where-permit>
+            {% for p in permit_types %}<option value="{{ p }}" {% if p == 'Green' %}selected{% endif %}>{{ 'Visitor (no permit)' if p == 'Visitor' else p + ' permit' }}</option>{% endfor %}
+          </select>
+        </label>
+        <label class="form-field"><span class="field-label">Day</span>
+          <select class="text-input" data-where-day><option value="0">Weekday</option><option value="1">Saturday or Sunday</option></select>
+        </label>
+        <label class="form-field"><span class="field-label">Time</span>
+          <input class="text-input" type="time" value="12:00" step="900" data-where-time>
+        </label>
+      </div>
+      <div class="where-results" data-where-results aria-live="polite"></div>
+      <details class="access-table-wrap">
+        <summary>Full permit and visitor access table</summary>
+        <div class="table-scroll">
+          <table class="access-table">
+            <thead><tr><th scope="col">Location</th><th scope="col">Overnight</th>{% for p in permit_types %}<th scope="col">{{ p }}</th>{% endfor %}</tr></thead>
+            <tbody data-access-body></tbody>
+          </table>
+        </div>
+        <p class="muted small">From CSU Parking Services' permit and visitor access restrictions, updated October 3, 2024.</p>
+      </details>
+    </div>
+  </section>
+
+  {# ---------- Permits ---------- #}
+  <section class="panel" aria-labelledby="permits-title">
+    <header class="panel-head">
+      <div><h3 id="permits-title">Parking permits</h3><p class="muted small">Prices per semester, fall 2026 and spring 2027</p></div>
+      <a class="btn btn-primary btn-sm" href="{{ office.buy_url }}" target="_blank" rel="noopener">Buy a permit {{ icon('external') }}</a>
+    </header>
+    <ul class="permit-list">
+      {% for p in permits %}
+        <li class="permit permit-{{ p.name|lower }}">
+          <span class="permit-swatch" aria-hidden="true"></span>
+          <div class="permit-main"><strong>{{ p.name }}</strong><span class="muted small">{{ p.hours }}</span><p>{{ p.text }}</p></div>
+          <span class="permit-price">{{ p.price }}</span>
+        </li>
+      {% endfor %}
+      <li class="permit permit-overnight">
+        <span class="permit-swatch" aria-hidden="true"></span>
+        <div class="permit-main"><strong>Overnight surcharge</strong><span class="muted small">24/7</span><p>{{ overnight.text }}</p></div>
+        <span class="permit-price">{{ overnight.price }}</span>
+      </li>
+    </ul>
+    <div class="panel-pad">
+      <h4 class="sub-head">Good to know</h4>
+      <ul class="rule-list">{% for r in rules %}<li>{{ r }}</li>{% endfor %}</ul>
+      <p class="muted small">Sign in to the CSU Online Parking System with your CSU ID and CampusNet password to buy a permit.</p>
+      <div class="link-row">
+        <a class="link" href="{{ office.green_map }}" target="_blank" rel="noopener">Green permit map {{ icon('external') }}</a>
+        <a class="link" href="{{ office.white_map }}" target="_blank" rel="noopener">White permit map {{ icon('external') }}</a>
+        <a class="link" href="{{ office.visitor_map }}" target="_blank" rel="noopener">Visitor parking map {{ icon('external') }}</a>
+        <a class="link" href="{{ office.rules_url }}" target="_blank" rel="noopener">Parking rules {{ icon('external') }}</a>
+        <a class="link" href="{{ office.page_url }}" target="_blank" rel="noopener">Commuter parking page {{ icon('external') }}</a>
+      </div>
+      <p class="office-line">{{ icon('building') }} <span>Parking Services: {{ office.where }} · <a href="tel:+1{{ office.phone|replace('-', '') }}">{{ office.phone }}</a> · <a href="mailto:{{ office.email }}">{{ office.email }}</a> · {{ office.hours }}</span></p>
+    </div>
+  </section>
+
+  
+</div>
+
+<script type="application/json" id="tr-data">{{ {"garages": garages, "access": access, "permits": permit_types, "focus": focus}|tojson }}</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/transportation.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="tr-page" data-tr-page>
+  {% include 'partials/getting_around_tabs.html' %}
+
+  {# ---------- Viking Safety Escorts ---------- #}
+  <section class="escort-band" id="escorts" aria-labelledby="escort-title">
+    <div class="escort-text">
+      <span class="escort-label">{{ icon('shield') }} Viking Safety Escorts</span>
+      <h2 id="escort-title">Don't walk alone. Call for an escort.</h2>
+      <p>{{ escorts.text }} {{ escorts.note }}</p>
+      <p class="escort-hint">{{ icon('pin') }} Or select your pickup point on the map below to request an escort by chat.</p>
+    </div>
+    <div class="escort-actions">
+      <a class="btn btn-lg btn-light" href="tel:+1{{ escorts.phone|replace('-', '') }}">{{ icon('phone') }}<span>Call {{ escorts.phone }}</span></a>
+    </div>
+  </section>
+
+
+  {# ---------- Coverage map and pickup points ---------- #}
+  <section class="panel" id="escort-map" aria-labelledby="escort-map-title">
+    <header class="panel-head">
+      <div><h3 id="escort-map-title">Coverage area and pickup points</h3>
+        <p class="muted small">Escorts cover campus and nearby off-campus student housing.</p></div>
+    </header>
+    <div class="panel-pad escort-grid">
+      <figure class="escort-figure escort-map">
+        {% set stop_layer %}
+          <g class="esc-layer">
+            <path class="esc-area" d="{{ perimeter }}"/>
+            {% for st in stops %}
+              <g class="esc-stop" data-stop="{{ st.id }}" tabindex="0" role="button" transform="translate({{ st.x }} {{ st.y }})"
+                 aria-label="Request an escort from {{ st.name }}">
+                <title>{{ st.name }}</title>
+                <circle class="esc-ring" r="8.5"/>
+                <circle class="esc-dot" r="5.4"/>
+                <text y="1.9">{{ loop.index }}</text>
+              </g>
+            {% endfor %}
+          </g>
+        {% endset %}
+        {% set campus %}{% include 'partials/campus_map_svg.html' %}{% endset %}
+        {{ campus|replace('</svg>', stop_layer ~ '</svg>')|replace('data-cmap', 'data-escort-svg')|safe }}
+        <div class="map-tip" data-esc-tip hidden></div>
+        <figcaption><span class="esc-key-line"></span> Escort coverage area, traced from CSU Police's perimeter map. Select a numbered pickup point to request an escort.</figcaption>
+      </figure>
+      <div class="escort-info">
+        <div>
+        <h4 class="sub-head">Pickup and drop-off points</h4>
+        <ol class="stop-key">
+          {% for st in stops %}
+            <li><button type="button" class="stop-row" data-stop="{{ st.id }}">
+              <span class="stop-num">{{ loop.index }}</span>
+              <span><strong>{{ st.name }}</strong><small>{{ st.buildings|join(', ') }}</small></span>
+            </button></li>
+          {% endfor %}
+        </ol>
+        </div>
+        <div>
+        <h4 class="sub-head">Good to know</h4>
+        <ul class="rule-list">
+          <li>Ambassadors are on duty 24 hours a day, every day of the year.</li>
+          <li>Request an escort by calling <a href="tel:+1{{ escorts.phone|replace('-', '') }}">{{ escorts.phone }}</a> or through the Rave Guardian safety app.</li>
+          <li>Escorts are for people with a real concern for their safety. It isn't a ride or taxi service.</li>
+          <li>Wait inside or in a well-lit spot near your pickup point.</li>
+        </ul>
+        <a class="link" href="{{ escorts.url }}" target="_blank" rel="noopener">Viking Safety Escorts on CSU's website {{ icon('external') }}</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+{# ---------- Escort chat ---------- #}
+<dialog class="dialog chat-dialog" id="escort-chat" aria-labelledby="chat-title">
+  <div class="chat-head">
+    <span class="row-icon">{{ icon('shield') }}</span>
+    <div><h2 id="chat-title">Viking Safety Escorts</h2><span class="muted small">Or call <a href="tel:+12166872020">216-687-2020</a> anytime</span></div>
+    <button class="icon-btn" type="button" data-chat-close aria-label="Close chat">{{ icon('x') }}</button>
+  </div>
+  <ol class="chat-log" data-chat-log aria-live="polite"></ol>
+  <div class="chat-quick" data-chat-quick></div>
+  <form class="chat-form" data-chat-form>
+    <input class="text-input" name="msg" autocomplete="off" placeholder="Type a message" aria-label="Message">
+    <button class="btn btn-primary" type="submit">Send</button>
+  </form>
+  <p class="chat-note">Chats in Viking Hub aren't sent to CSU Police. If you need an escort now, call <a href="tel:+12166872020">216-687-2020</a> or use the Rave Guardian app.</p>
+</dialog>
+
+<script type="application/json" id="tr-data">{{ {"points": points, "stops": stops}|tojson }}</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/transportation.js') }}"></script>
+{% endblock %}

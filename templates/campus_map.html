@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="map-page" data-map-page data-selected="{{ selected }}"{% if open_innerlink %} data-innerlink{% endif %}>
+  <p class="map-intro">The campus map helps you find classrooms, university offices and campus services. Select any building to see what's inside and related CSU resources.</p>
+
+  {# ---------- Map ---------- #}
+  <section class="panel map-panel no-clip" aria-label="Campus map">
+    <div class="map-toolbar">
+      <div class="input-wrap map-find">
+        <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10.5 3a7.5 7.5 0 0 1 6 12l4.7 4.7-1.7 1.7-4.7-4.7A7.5 7.5 0 1 1 10.5 3zm0 2.3a5.2 5.2 0 1 0 0 10.4 5.2 5.2 0 0 0 0-10.4z"/></svg>
+        <input type="search" placeholder="Find a building or office" aria-label="Find a building" autocomplete="off" data-map-find>
+        <ul class="find-results" data-find-results hidden></ul>
+      </div>
+      <div class="map-tools">
+        <button class="btn btn-ghost" type="button" data-drop-pin aria-pressed="false">{{ icon('pin') }}<span>Drop a pin</span></button>
+        <button class="btn btn-ghost" type="button" data-fullscreen>{{ icon('expand') }}<span>Full screen</span></button>
+      </div>
+    </div>
+
+    <div class="map-stage" data-map-stage>
+      {% include 'partials/campus_map_svg.html' %}
+      <div class="map-tip" data-map-tip hidden></div>
+      <div class="drop-banner" data-drop-banner hidden>{{ icon('pin') }} Click anywhere on the map to drop a pin. <button class="text-btn" type="button" data-drop-cancel>Cancel</button></div>
+      <div class="map-pop" data-map-pop role="dialog" aria-live="polite" hidden></div>
+      <div class="map-zoom" role="group" aria-label="Zoom">
+        <button class="icon-btn" type="button" data-zoom="in" aria-label="Zoom in">{{ icon('plus') }}</button>
+        <button class="icon-btn" type="button" data-zoom="out" aria-label="Zoom out"><svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 10.8h16v2.4H4z"/></svg></button>
+        <button class="icon-btn" type="button" data-zoom="reset" aria-label="Show the whole campus">{{ icon('refresh') }}</button>
+      </div>
+    </div>
+
+    <div class="map-foot">
+      <ul class="map-legend">
+        <li><span class="lg lg-bldg"></span>Building</li>
+        <li><span class="lg-group"><span class="lg lg-park"></span><span class="lg lg-park lg-filling"></span><span class="lg lg-park lg-low"></span></span>Parking: open, filling up, almost full</li>
+        <li><span class="lg lg-link"></span>Innerlink</li>
+        <li><span class="lg lg-pin"></span>Your pins</li>
+      </ul>
+      <p class="map-hint">Drag to move around when zoomed in. Hold Ctrl and scroll, or use the buttons, to zoom.</p>
+      <p class="map-links">
+        <a class="link" href="{{ official_map }}" target="_blank" rel="noopener">CSU campus map page {{ icon('external') }}</a>
+        <a class="link" href="{{ url_for('static', filename='images/csu-campus-map.pdf') }}" target="_blank" rel="noopener">Printable map with parking key (PDF) {{ icon('external') }}</a>
+      </p>
+
+    </div>
+  </section>
+
+  {# ---------- Pins and directory ---------- #}
+  <div class="map-below">
+    <section class="panel" id="pins" aria-labelledby="pins-title">
+      <header class="panel-head"><h3 id="pins-title">My pins</h3></header>
+      <ul class="pin-list" data-pin-list></ul>
+      <p class="muted small panel-pad">Pin a building from its details, or use <strong>Drop a pin</strong> to mark any spot, like where you parked.</p>
+    </section>
+
+    <section class="panel" aria-labelledby="bl-title">
+      <header class="panel-head"><h3 id="bl-title">Buildings and garages</h3></header>
+      <div class="panel-pad">
+        <div class="chip-row" role="group" aria-label="Filter by type">
+          <button type="button" class="chip is-on" data-cat="">All</button>
+          {% for c in categories %}<button type="button" class="chip" data-cat="{{ c }}">{{ c }}</button>{% endfor %}
+        </div>
+      </div>
+      <ul class="bldg-list bldg-grid" data-bldg-list>
+        {% for b in buildings %}
+          <li><button type="button" class="bldg-row" data-pick="{{ b.code }}" data-cat="{{ b.category }}">
+            <span class="code-tag {% if b.category == 'Parking' %}is-park{% endif %}">{{ b.code }}</span>
+            <span class="row-text"><strong>{{ b.name }}</strong><small>{{ b.category }}</small></span>
+          </button></li>
+        {% endfor %}
+      </ul>
+    </section>
+  </div>
+
+</div>
+
+<script type="application/json" id="map-data">{{ {'buildings': buildings, 'pins': pins, 'places': places, 'innerlink': innerlink}|tojson }}</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/campus_map.js') }}"></script>
+{% endblock %}

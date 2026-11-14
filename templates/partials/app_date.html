@@ -1,0 +1,7 @@
+{# Change the day the whole app treats as today. The date input opens the browser's own date picker. #}
+{% macro app_date_picker(label='Change day', cls='') %}
+<span class="app-date {{ cls }}" data-app-date>
+  <button class="app-date-btn" type="button" data-app-date-open>{{ icon('calendar') }}<span>{{ label }}</span></button>
+  <input class="app-date-input" type="date" aria-label="Day to show" min="{{ app_day.default }}" max="{{ app_day.max }}" value="{{ app_day.iso }}" data-app-date-input>
+</span>
+{% endmacro %}

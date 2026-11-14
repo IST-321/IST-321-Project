@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="panel page-panel" aria-labelledby="all-alerts-title">
+  <header class="panel-head">
+    <h2 id="all-alerts-title">All alerts <span class="count" data-alert-count-inline></span></h2>
+    <div class="popover-tools">
+      <label class="alert-filter"><span class="visually-hidden">Show</span>
+                <select data-alert-filter>
+                  <option value="">All alerts</option><option value="new">New only</option>
+                  <option value="card">Viking Card</option><option value="schedule">Schedule</option>
+                  <option value="deadline">Deadlines</option><option value="orientation">Orientation</option>
+                  <option value="campus">Campus</option><option value="transportation">Getting around</option>
+                </select></label>
+      <button class="text-btn" type="button" data-alerts-clear-all>Clear all</button>
+    </div>
+  </header>
+  <p class="alert-new-note" data-alert-new-note hidden>{{ icon('info') }} New alerts are highlighted until you leave this page.</p>
+  <ul class="alert-list" data-alert-list data-limit="100" data-mark-seen="leave"></ul>
+  <p class="alert-empty" data-alert-none hidden>No alerts match this filter.</p>
+  <p class="alert-empty" data-alert-empty hidden>You're all caught up. New alerts about your Viking Card, classes, orientation and campus will show up here.</p>
+</section>
+{% endblock %}

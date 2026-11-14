@@ -1,1 +1,126 @@
+{% extends 'base.html' %}
 
+{% block content %}
+<div class="sch-page" data-sch>
+{% include 'partials/schedule_tabs.html' %}
+
+  {# ---------- Planner ---------- #}
+  <section class="panel sch-cal no-clip" aria-labelledby="sch-range">
+    <header class="sch-toolbar">
+      <div class="sch-nav">
+        <button class="icon-btn" type="button" data-sch-prev aria-label="Previous">{{ icon('back') }}</button>
+        <button class="btn btn-ghost btn-sm" type="button" data-sch-today>Today</button>
+        <button class="icon-btn" type="button" data-sch-next aria-label="Next">{{ icon('chevron-right') }}</button>
+        <h2 id="sch-range" data-sch-range></h2>
+        <button class="btn btn-ghost btn-sm sch-make-day" type="button" data-sch-make-day hidden>{{ icon('calendar') }}<span>Preview this day</span></button>
+      </div>
+      <div class="sch-actions">
+        <div class="segmented" role="group" aria-label="View">
+          <button type="button" data-sch-view="day">Day</button>
+          <button type="button" data-sch-view="week">Week</button>
+        </div>
+        <div class="popover-wrap" data-add-menu>
+          <button class="btn btn-primary" type="button" data-add-toggle aria-haspopup="true" aria-expanded="false">{{ icon('plus') }}<span>Add</span></button>
+          <div class="popover menu-panel add-menu" role="menu" hidden>
+            <button role="menuitem" type="button" data-add="event">{{ icon('calendar') }} Personal event</button>
+            <button role="menuitem" type="button" data-add="assignment">{{ icon('clock') }} Assignment</button>
+            <button role="menuitem" type="button" data-add="class">{{ icon('book') }} Class</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <p class="sch-sync">{{ icon('refresh') }} <span>Your schedule automatically updates every night at 11:59 PM.</span></p>
+
+    <ul class="sch-legend" aria-label="Legend">
+      <li class="k-class">Class</li>
+      <li class="k-assignment">Assignment</li>
+      <li class="k-personal">Personal</li>
+      <li class="k-campus">Campus event</li>
+      <li class="k-imported">Blackboard</li>
+    </ul>
+
+    <div class="sch-body" data-sch-body></div>
+  </section>
+
+  {# ---------- Deadlines and classes ---------- #}
+  <div class="sch-pair">
+    <section class="panel" aria-labelledby="dl-title">
+      <header class="panel-head">
+        <h3 id="dl-title">Assignment deadlines</h3>
+        <button class="text-btn" type="button" data-add="assignment">Add assignment</button>
+      </header>
+      <ul class="deadline-list" data-deadlines></ul>
+    </section>
+
+    <section class="panel" aria-labelledby="cl-title">
+      <header class="panel-head">
+        <h3 id="cl-title">My classes · {{ data.term.name }}</h3>
+        <button class="text-btn" type="button" data-add="class">Add class</button>
+      </header>
+      <ul class="class-cards" data-classes></ul>
+    </section>
+  </div>
+
+  {# ---------- Calendar files (Blackboard import beside .ics export), then course tools across the bottom ---------- #}
+  <div class="sch-stack">
+    <section class="panel" id="calendar-files" aria-labelledby="cal-title">
+      <header class="panel-head"><h3 id="cal-title">Calendar files</h3></header>
+      <div class="panel-pad cal-files">
+        <div class="cal-part">
+          <h4 class="sub-head">{{ icon('plus') }} Bring in your Blackboard calendar</h4>
+          <p class="muted small">Blackboard can export your course calendar, including due dates, as an .ics file. Import it here to add those items to your planner.</p>
+          <ol class="steps">
+            <li>Sign in to Blackboard and open <strong>Calendar</strong>.</li>
+            <li>In the calendar settings, export or share your calendar and save the .ics file.</li>
+            <li>Choose the file below and select <strong>Import</strong>.</li>
+          </ol>
+          <form class="import-row" data-import enctype="multipart/form-data">
+            <label class="file-pick">
+              <input type="file" name="calendar" accept=".ics,text/calendar" data-import-file>
+              <span class="btn btn-ghost">{{ icon('plus') }}<span data-import-name>Choose .ics file</span></span>
+            </label>
+            <button class="btn btn-primary" type="submit">Import</button>
+          </form>
+          <p class="field-error" data-import-error></p>
+        </div>
+
+        <form class="cal-part" id="export" method="get" action="{{ url_for('schedule.export_ics') }}" data-export>
+          <h4 class="sub-head">{{ icon('download') }} Send your schedule to another calendar</h4>
+          <p class="muted small">Download an .ics file for Google Calendar, Outlook or Apple Calendar. Classes repeat each week through December 12, without canceled days and campus closures.</p>
+          <fieldset class="choice-list two-col">
+            <legend class="visually-hidden">What to include</legend>
+            {% for key, label in export_parts.items() %}
+              <label class="choice"><input type="checkbox" name="part" value="{{ key }}" checked><span>{{ label }}</span></label>
+            {% endfor %}
+          </fieldset>
+          <p class="field-error" data-export-error></p>
+          <button class="btn btn-primary" type="submit">{{ icon('download') }}<span>Download .ics file</span></button>
+        </form>
+      </div>
+    </section>
+
+    <section class="panel course-tools" aria-labelledby="ql-title">
+      <header class="panel-head"><h3 id="ql-title">Course tools</h3></header>
+      <ul class="row-list compact tools-row">
+        {% for l in links %}
+          <li><a class="row-link" href="{{ l.url }}" target="_blank" rel="noopener">
+            <span class="row-icon">{{ icon(l.icon) }}</span>
+            <span class="row-text"><strong>{{ l.label }}</strong><small>{{ l.text }}</small></span>
+            {{ icon('external', 'row-chevron') }}</a></li>
+        {% endfor %}
+      </ul>
+    </section>
+  </div>
+</div>
+
+<dialog class="dialog sch-dialog" id="sch-dialog" aria-labelledby="sch-dialog-title">
+  <div data-sch-dialog-body></div>
+</dialog>
+
+<script type="application/json" id="sch-data">{{ data|tojson }}</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/schedule.js') }}"></script>
+{% endblock %}

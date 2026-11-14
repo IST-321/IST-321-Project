@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="tr-page" data-tr-page>
+  {% include 'partials/getting_around_tabs.html' %}
+
+  <section class="panel trip-card" aria-labelledby="trip-title">
+    <div class="panel-pad trip-inner">
+      <span class="row-icon">{{ icon('bus') }}</span>
+      <div>
+        <h3 id="trip-title">Plan an RTA trip</h3>
+        <p class="muted">Use Transit to plan a bus or train ride to campus, with live arrival times. Your RTA U-Pass covers the fare. The HealthLine stops right on Euclid Avenue.</p>
+        <a class="btn btn-primary" href="https://transitapp.com/en/trip" target="_blank" rel="noopener">Open Transit trip planner {{ icon('external') }}</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="tr-two">
+    {# ---------- Other ways to get here ---------- #}
+    <section class="panel" aria-labelledby="green-title">
+      <header class="panel-head"><h3 id="green-title">Other ways to get here</h3></header>
+      <ul class="resource-grid one-col">
+        {% for g in green %}
+          <li><span class="row-icon">{{ icon(g.icon) }}</span>
+            <div><strong>{{ g.title }}</strong><p>{{ g.text }}</p><a class="link" href="{{ g.url }}" target="_blank" rel="noopener">{{ g.label }} {{ icon('external') }}</a></div></li>
+        {% endfor %}
+      </ul>
+      <p class="panel-foot"><a class="link" href="https://www.csuohio.edu/sustainability/transportation" target="_blank" rel="noopener">CSU sustainable transportation {{ icon('external') }}</a></p>
+    </section>
+
+    {# ---------- Scooters ---------- #}
+    <section class="panel" aria-labelledby="scooter-title">
+      <header class="panel-head"><h3 id="scooter-title">Scooters on campus</h3></header>
+      <div class="panel-pad">
+        <p class="muted">Shared e-scooters run daily from 5 AM to 9 PM through their apps. Report maintenance problems or bad parking to the scooter company.</p>
+        {% for head, items in scooter %}
+          <h4 class="sub-head">{{ head }}</h4>
+          <ul class="rule-list">{% for i in items %}<li>{{ i }}</li>{% endfor %}</ul>
+        {% endfor %}
+        <p class="muted small">Helmets, bright clothing and both hands on the handlebars are strongly recommended. Riders use scooters at their own risk.</p>
+        <a class="link" href="https://www.csuohio.edu/sites/default/files/Scooters_on_CSU_Campus.pdf" target="_blank" rel="noopener">Scooters on CSU's campus (PDF) {{ icon('external') }}</a>
+      </div>
+    </section>
+  </div>
+
+</div>
+{% endblock %}

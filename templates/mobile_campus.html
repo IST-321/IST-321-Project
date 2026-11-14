@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="mc-page" data-mc-page>
+
+  <p class="notice">{{ icon('id') }} <span>Your Viking Card is required when picking up borrowed equipment.</span></p>
+
+  <div class="mc-layout">
+    <div>
+      {# ---------- Equipment ---------- #}
+      <section class="panel" aria-labelledby="eq-title">
+        <header class="panel-head">
+          <div><h3 id="eq-title">Borrow equipment</h3><p class="muted small">Free for registered CSU students, first come, first served</p></div>
+        </header>
+        <p class="lock-note" data-mc-lock hidden></p>
+        <ul class="eq-list" data-eq-list></ul>
+      </section>
+
+      {# ---------- My loans ---------- #}
+      <section class="panel" aria-labelledby="loans-title">
+        <header class="panel-head"><h3 id="loans-title">My loans and requests</h3></header>
+        <ul class="loan-list" data-loan-list></ul>
+      </section>
+    </div>
+
+    <aside>
+      <section class="panel" aria-labelledby="mc-info-title">
+        <header class="panel-head"><h3 id="mc-info-title">Mobile Campus</h3></header>
+        <div class="panel-pad">
+          <ul class="contact-list">
+            <li>{{ icon('pin') }} <a href="{{ url_for('campus_map.index', b='SC') }}">{{ info.where }}</a></li>
+            <li>{{ icon('phone') }} <a href="tel:+1{{ info.phone|replace('-', '') }}">{{ info.phone }}</a></li>
+            <li>{{ icon('mail') }} <a href="mailto:{{ info.email }}">{{ info.email }}</a></li>
+          </ul>
+          <h4 class="sub-head">Fall 2026 hours</h4>
+          <dl class="hours-list">
+            {% for d, h in info.hours %}<div><dt>{{ d }}</dt><dd>{{ h }}</dd></div>{% endfor %}
+          </dl>
+          <h4 class="sub-head">Borrowing policies</h4>
+          <ul class="rule-list">{% for p in policies %}<li>{{ p }}</li>{% endfor %}</ul>
+          <a class="link" href="{{ info.url }}" target="_blank" rel="noopener">Mobile Campus page {{ icon('external') }}</a>
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>
+
+{# ---------- Request dialog ---------- #}
+<dialog class="dialog" id="eq-dialog" aria-labelledby="eq-dialog-title">
+  <form data-eq-form novalidate>
+    <h2 id="eq-dialog-title">Request <span data-eq-name></span></h2>
+    <p class="dialog-body" data-eq-desc></p>
+    <fieldset class="choice-list two-col">
+      <legend class="field-label">Loan length</legend>
+      <label class="choice"><input type="radio" name="loan_type" value="Semester" checked><span>Semester <small class="muted" data-eq-pool="Semester"></small></span></label>
+      <label class="choice"><input type="radio" name="loan_type" value="7 day"><span>7 days <small class="muted" data-eq-pool="7 day"></small></span></label>
+    </fieldset>
+    <label class="form-field"><span class="field-label">Pickup day <span class="muted">(this week only)</span></span>
+      <select class="text-input" name="pickup_date">
+        {% for d in days %}<option value="{{ d }}">{{ d|nice_date('%A, %B %d') }}</option>{% endfor %}
+      </select>
+    </label>
+    <label class="form-field"><span class="field-label">Note for Mobile Campus <span class="muted">(optional)</span></span>
+      <input class="text-input" name="note" maxlength="200" placeholder="For example: I'd like a carrying bag"></label>
+    <label class="check agree"><input type="checkbox" name="agreement"><span class="check-box" aria-hidden="true">{{ icon('check') }}</span>
+      <span>I've completed the Mobile Campus Agreement in the ServiceNow portal.</span></label>
+    <p class="muted small">Requests are held through Friday of this week so devices don't sit unclaimed. Semester loans are due back {{ semester_end|nice_date('%B %d') }}. Bring your Viking Card to Student Center 128A to pick up.</p>
+    <p class="field-error" data-eq-error></p>
+    <div class="dialog-actions">
+      <button class="btn btn-ghost" type="button" data-eq-cancel>Cancel</button>
+      <button class="btn btn-primary" type="submit">Request</button>
+    </div>
+  </form>
+</dialog>
+
+<script type="application/json" id="mc-data">{{ state|tojson }}</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/mobile_campus.js') }}"></script>
+{% endblock %}

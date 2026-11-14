@@ -1,0 +1,42 @@
+{# First semester resources and the new student directory, shared by Orientation and Resources #}
+  {# ---------- Resources ---------- #}
+  <section class="panel" aria-labelledby="res-title">
+    <header class="panel-head"><h3 id="res-title">First semester resources</h3></header>
+    <ul class="resource-grid">
+      {% for r in resources %}
+        <li>
+          <span class="row-icon">{{ icon(r.icon) }}</span>
+          <div>
+            <strong>{{ r.title }}</strong>
+            <p>{{ r.text }}</p>
+            <a class="link" href="{{ r.url }}" {% if r.url.startswith('http') %}target="_blank" rel="noopener"{% endif %}>{{ r.label }}{% if r.url.startswith('http') %} {{ icon('external') }}{% endif %}</a>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  {# ---------- New student directory ---------- #}
+  <section class="panel" aria-labelledby="dir-title">
+    <header class="panel-head"><h3 id="dir-title">New student directory</h3></header>
+    <div class="directory">
+      {% for category, entries in directory %}
+        <div class="dir-group">
+          <h4 class="or-group">{{ category }}</h4>
+          <ul>
+            {% for e in entries %}
+              <li>
+                <strong>{{ e.name }}</strong>
+                <p>{{ e.text }}</p>
+                <p class="dir-meta">
+                  {% if e.where %}<span>{{ icon('pin') }} {{ e.where }}</span>{% endif %}
+                  {% if e.phone %}<a href="tel:+1{{ e.phone|replace('-', '') }}">{{ icon('phone') }} {{ e.phone }}</a>{% endif %}
+                  {% if e.email %}<a href="mailto:{{ e.email }}">{{ icon('mail') }} {{ e.email }}</a>{% endif %}
+                </p>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endfor %}
+    </div>
+  </section>

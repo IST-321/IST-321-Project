@@ -1,0 +1,8 @@
+<footer class="site-footer">
+  <nav class="footer-links" aria-label="CSU services">
+    {% for link in footer_links %}
+      <a href="{{ link.url }}" target="_blank" rel="noopener">{{ link.label }}</a>
+    {% endfor %}
+  </nav>
+  <p class="footer-help">Have a problem? Contact <a href="https://www.csuohio.edu/ist" target="_blank" rel="noopener">IS&amp;T</a> or call at <a href="tel:+12166875050">216-687-5050</a>.</p>
+</footer>

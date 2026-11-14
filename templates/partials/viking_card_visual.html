@@ -1,0 +1,22 @@
+{# Digital Viking Card artwork. Text sizes scale with the card's width. #}
+{% macro viking_card_visual(student, card, interactive=false) -%}
+<div class="vcard {% if card and card.is_locked %}is-locked{% endif %}"
+     {% if interactive %}role="button" tabindex="0" aria-label="Viking Card. Select to use tap to pay." data-vcard{% endif %}>
+  <div class="vcard-top">
+    <span class="vcard-label">Viking Card</span>
+    <img class="vcard-logo" src="{{ url_for('static', filename='images/csu-logo-horizontal-white.svg') }}" alt="Cleveland State University">
+  </div>
+  <div class="vcard-photo">
+    <img src="{{ url_for('static', filename='images/viking-head.svg') }}" alt="">
+  </div>
+  <div class="vcard-bottom">
+    <img class="vcard-watermark" src="{{ url_for('static', filename='images/viking-head.svg') }}" alt="">
+    <div class="vcard-text">
+      <span class="vcard-first">{{ student.first_name }}</span>
+      <span class="vcard-last">{{ student.last_name }}</span>
+      <span class="vcard-id">CSU ID: {{ student.student_id }}</span>
+    </div>
+  </div>
+  <div class="vcard-lock" aria-hidden="true">{{ icon('lock') }}<span>Locked</span></div>
+</div>
+{%- endmacro %}

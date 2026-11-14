@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}{{ code }}{% endblock %}
+{% block body_class %}auth{% endblock %}
+{% block body %}
+<main class="error-page" id="main">
+  <img src="{{ url_for('static', filename='images/viking-head.svg') }}" alt="" class="error-viking">
+  <p class="eyebrow">Error {{ code }}</p>
+  <h1>{{ message }}</h1>
+  {% if detail %}<p class="muted">{{ detail }}</p>{% endif %}
+  <a class="btn btn-primary" href="{{ url_for('auth.root') }}">Go to home</a>
+</main>
+{% endblock %}

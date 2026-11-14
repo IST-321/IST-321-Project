@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="settings-page" data-settings>
+
+  <section class="panel" aria-labelledby="set-text">
+    <header class="panel-head"><h3 id="set-text">Text size</h3></header>
+    <div class="panel-pad">
+      <div class="segmented" role="radiogroup" aria-labelledby="set-text">
+        {% for key, label in sizes %}
+          <button type="button" role="radio" aria-checked="{{ 'true' if prefs.text_size == key else 'false' }}"
+                  class="{{ 'is-on' if prefs.text_size == key }}" data-text-size="{{ key }}">{{ label }}</button>
+        {% endfor %}
+      </div>
+      <p class="muted small set-hint">Makes text bigger across all of Viking Hub.</p>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="set-alerts">
+    <header class="panel-head"><div><h3 id="set-alerts">Alerts</h3><p class="muted small">Turned off types stop sending new alerts. Alerts you already have stay put.</p></div></header>
+    <ul class="set-list">
+      {% for key, label in categories.items() %}
+        <li><label class="set-row"><span>{{ label }}</span>
+          <input class="switch" type="checkbox" data-alert-type="{{ key }}" {% if key not in prefs.alerts_off %}checked{% endif %}></label></li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <section class="panel" aria-labelledby="set-sound">
+    <header class="panel-head"><h3 id="set-sound">Sounds and motion</h3></header>
+    <ul class="set-list">
+      <li><label class="set-row"><span><strong>Horn for new alerts</strong><small>Plays when a new alert arrives</small></span>
+        <input class="switch" type="checkbox" data-pref="sound_horn" {% if prefs.sound_horn %}checked{% endif %}></label></li>
+      <li><label class="set-row"><span><strong>War cry</strong><small>Plays when you finish orientation</small></span>
+        <input class="switch" type="checkbox" data-pref="sound_war_cry" {% if prefs.sound_war_cry %}checked{% endif %}></label></li>
+      <li><label class="set-row"><span><strong>Reduce motion</strong><small>Turns off the horn shake, card lift and longship animations. Viking Hub also follows your device's reduce motion setting.</small></span>
+        <input class="switch" type="checkbox" data-pref="reduce_motion" {% if prefs.reduce_motion %}checked{% endif %}></label></li>
+    </ul>
+  </section>
+
+  <section class="panel" aria-labelledby="set-home">
+    <header class="panel-head"><h3 id="set-home">Home location</h3></header>
+    <a class="row-link" href="{{ url_for('campus_map.index') }}#pins">
+      <span class="row-icon">{{ icon('home') }}</span>
+      <span class="row-text"><strong>{{ home.label }}</strong><small>Walking times for your first stop of the day start here. Change it from your pins on the campus map.</small></span>
+      {{ icon('chevron-right', 'row-chevron') }}
+    </a>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  const page = document.querySelector("[data-settings]");
+  async function save(body) {
+    try {
+      const res = await VH.api("/api/settings", { method: "POST", body });
+      window.VH_PREFS = res.prefs;
+      const html = document.documentElement;
+      html.classList.remove("text-default", "text-large", "text-larger");
+      html.classList.add(`text-${res.prefs.text_size}`);
+      html.classList.toggle("reduce-motion", res.prefs.reduce_motion);
+      VH.toast(res.message);
+    } catch (err) { VH.toast(err.message, "error"); }
+  }
+  page.querySelectorAll("[data-text-size]").forEach((b) => b.addEventListener("click", () => {
+    page.querySelectorAll("[data-text-size]").forEach((x) => { x.classList.toggle("is-on", x === b); x.setAttribute("aria-checked", String(x === b)); });
+    save({ text_size: b.dataset.textSize });
+  }));
+  page.querySelectorAll("[data-alert-type]").forEach((c) => c.addEventListener("change", () => {
+    save({ alerts_off: [...page.querySelectorAll("[data-alert-type]")].filter((x) => !x.checked).map((x) => x.dataset.alertType) });
+  }));
+  page.querySelectorAll("[data-pref]").forEach((c) => c.addEventListener("change", () => save({ [c.dataset.pref]: c.checked })));
+})();
+</script>
+{% endblock %}

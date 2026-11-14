@@ -1,1 +1,238 @@
+<!DOCTYPE html>
+<html lang="en"{% if prefs_global %} class="text-{{ prefs_global.text_size }}{% if prefs_global.reduce_motion %} reduce-motion{% endif %}"{% endif %}>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#006a4d">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>{% block title %}{{ title or 'Home' }}{% endblock %} · CSU Viking Hub</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/viking-head.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+  {# Apply the saved sidebar state before the page paints #}
+  {# Saved view settings only last while the app is running; each launch starts fresh #}
+  <script>
+    window.VH_BOOT = {{ boot_id|tojson }};
+    try {
+      if (localStorage.getItem('vh-boot') !== window.VH_BOOT) { localStorage.removeItem('vh-nav'); localStorage.setItem('vh-boot', window.VH_BOOT); }
+      // The sidebar starts collapsed each time the app opens.
+      if (localStorage.getItem('vh-nav') !== 'open') document.documentElement.classList.add('nav-collapsed');
+    } catch (_) {}
+  </script>
+  {% block head %}{% endblock %}
+</head>
+<body class="{% block body_class %}app{% endblock %}">
+{% block body %}
+  <a class="skip-link" href="#main">Skip to content</a>
+  {% set is_home = current_endpoint == 'dashboard.index' %}
+  {% set ep = 'schedule.index' if current_endpoint == 'grades.index' else current_endpoint %}
 
+  {# ---------- App bar ---------- #}
+  <header class="appbar">
+    <div class="appbar-inner">
+      <div class="appbar-left">
+        <button class="icon-btn appbar-menu" type="button" aria-label="Menu" aria-controls="sidebar" aria-expanded="false" data-nav-toggle>{{ icon('menu') }}</button>
+        <a class="brand {% if not is_home %}brand-desktop-only{% endif %}" href="{{ url_for('dashboard.index') }}" aria-label="Viking Hub home">
+          <img src="{{ url_for('static', filename='images/csu-logo-horizontal-white.svg') }}" alt="Cleveland State University">
+        </a>
+        {% if not is_home %}
+          <span class="appbar-divider" aria-hidden="true"></span>
+          <a class="icon-btn appbar-back" href="{{ url_for('dashboard.index') }}" aria-label="Back" data-back>{{ icon('back') }}</a>
+          <h1 class="appbar-title">{% block page_title %}{{ title }}{% endblock %}</h1>
+        {% endif %}
+      </div>
+
+      <div class="appbar-right">
+        {# Search everything (press / or Ctrl+K) #}
+        <button class="search-btn" type="button" data-search-open aria-haspopup="dialog" aria-label="Search Viking Hub">
+          {{ icon('search') }}<span class="search-btn-text">Search</span><kbd>/</kbd>
+        </button>
+        {# Viking horn: alerts #}
+        <div class="popover-wrap" data-alerts-root>
+          <button class="horn-btn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="alerts-panel" data-horn>
+            {{ icon('horn', 'horn-icon') }}
+            <svg class="horn-waves" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3.5c1.6.6 2.8 1.6 3.5 3"/><path d="M17.8 .8c2.6.9 4.6 2.6 5.6 5"/><path d="M21.6 9.2c.7.5 1.3.9 2.2 1"/></svg>
+            <span class="horn-badge" data-alert-count hidden>0</span>
+            <span class="visually-hidden">Alerts</span>
+          </button>
+          <section class="popover alerts-popover" id="alerts-panel" role="dialog" aria-label="Alerts" hidden>
+            <header class="popover-head">
+              <h2>Alerts</h2>
+              <div class="popover-tools">
+                <label class="alert-filter"><span class="visually-hidden">Show</span>
+                <select data-alert-filter>
+                  <option value="">All alerts</option><option value="new">New only</option>
+                  <option value="card">Viking Card</option><option value="schedule">Schedule</option>
+                  <option value="deadline">Deadlines</option><option value="orientation">Orientation</option>
+                  <option value="campus">Campus</option><option value="transportation">Getting around</option>
+                </select></label>
+                <button class="text-btn" type="button" data-alerts-clear-all>Clear all</button>
+              </div>
+            </header>
+            <ul class="alert-list" data-alert-list data-limit="5"></ul>
+            <p class="alert-empty" data-alert-empty hidden>You're all caught up.</p>
+            <p class="alert-empty" data-alert-none hidden>No alerts match this filter.</p>
+            <a class="popover-foot" href="{{ url_for('dashboard.alerts_page') }}">See all alerts</a>
+          </section>
+        </div>
+
+        {% if student %}
+        <div class="popover-wrap" data-menu>
+          <button class="profile-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Profile and settings" data-menu-toggle>
+            <img class="avatar" src="{{ url_for('static', filename='images/viking-head.svg') }}" alt="">
+            <span class="profile-text">
+              <strong>{{ student.first_name }} {{ student.last_name }}</strong>
+              <small>ID {{ student.student_id }}</small>
+            </span>
+            <span class="profile-caret">{{ icon('chevron-right') }}</span>
+          </button>
+          <div class="popover menu-panel" role="menu" hidden>
+            <div class="menu-head">
+              <strong>{{ student.first_name }} {{ student.last_name }}</strong>
+              <small>ID {{ student.student_id }}</small>
+              <small>{{ student.email }}</small>
+            </div>
+            <a role="menuitem" href="{{ url_for('settings.index') }}">{{ icon('settings') }} Settings</a>
+            <a role="menuitem" href="{{ url_for('viking_card.index') }}">{{ icon('card') }} My Viking Card</a>
+            <a role="menuitem" href="{{ url_for('grades.index') }}">{{ icon('book') }} My grades</a>
+            <a role="menuitem" href="{{ url_for('campus_map.index') }}#pins">{{ icon('home') }} Home location</a>
+            <form method="post" action="{{ url_for('auth.logout') }}">
+              <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+              <button role="menuitem" type="submit">{{ icon('logout') }} Sign out</button>
+            </form>
+          </div>
+        </div>
+
+        <form class="signout-form" method="post" action="{{ url_for('auth.logout') }}">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <button class="btn btn-on-green" type="submit">{{ icon('logout') }}<span>Sign out</span></button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  {# ---------- Sidebar: a panel on desktop, a drawer on phones ---------- #}
+  <aside class="sidebar" id="sidebar" aria-label="Site menu">
+    <nav class="sidebar-scroll">
+      <a class="side-link {% if is_home %}is-active{% endif %}" href="{{ url_for('dashboard.index') }}" {% if is_home %}aria-current="page"{% endif %}>
+        {{ icon('home') }}<span>Home</span>
+      </a>
+
+      <p class="side-group">Updates</p>
+      <a class="side-link {% if ep == 'dashboard.alerts_page' %}is-active{% endif %}" href="{{ url_for('dashboard.alerts_page') }}">
+        {{ icon('horn', 'side-horn') }}<span>Alerts</span><span class="side-count" data-alert-count hidden>0</span>
+      </a>
+      <a class="side-link {% if ep == 'dashboard.announcements_page' %}is-active{% endif %}" href="{{ url_for('dashboard.announcements_page') }}">
+        {{ icon('megaphone') }}<span>Announcements</span>
+      </a>
+
+      <p class="side-group">Services</p>
+      {% for item in services %}
+        <a class="side-link {% if ep == item.endpoint %}is-active{% endif %}" href="{{ url_for(item.endpoint) }}"
+           {% if ep == item.endpoint %}aria-current="page"{% endif %}>
+          {{ icon(item.icon) }}<span>{{ item.label }}</span>
+        </a>
+      {% endfor %}
+
+      <p class="side-group">Getting around</p>
+      {% for item in getting_around %}
+        <a class="side-link {% if ep == item.endpoint %}is-active{% endif %}" href="{{ url_for(item.endpoint) }}"
+           {% if ep == item.endpoint %}aria-current="page"{% endif %}>{{ icon(item.icon) }}<span>{{ item.label }}</span></a>
+      {% endfor %}
+    </nav>
+  </aside>
+  <div class="sidebar-backdrop" data-nav-close hidden></div>
+
+  <div class="shell">
+    <main id="main" class="content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="notice notice-{{ category }}" role="status">{{ icon('check-circle') }}<span>{{ message }}</span></div>
+        {% endfor %}
+      {% endwith %}
+      {% if student and app_day.moved %}
+      <div class="day-banner" role="status">
+        {{ icon('calendar') }}
+        <p>You're previewing <strong>{{ app_day.today.strftime('%A, %B') }} {{ app_day.today.day }}</strong>. Home, your schedule and the rest of the app follow this day.</p>
+        <button class="btn btn-ghost btn-sm" type="button" data-app-date-reset>Back to November 12</button>
+      </div>
+      {% endif %}
+      {% block content %}{% endblock %}
+    </main>
+    {% include 'partials/footer.html' %}
+  </div>
+
+  {# ---------- Bottom bar (phones) ---------- #}
+  <nav class="bottom-nav" aria-label="Main">
+    <a class="bottom-link {% if is_home %}is-active{% endif %}" href="{{ url_for('dashboard.index') }}" {% if is_home %}aria-current="page"{% endif %}>
+      {{ icon('home') }}<span>Home</span>
+    </a>
+    {% for item in services if item.mobile %}
+      <a class="bottom-link {% if ep == item.endpoint %}is-active{% endif %}" href="{{ url_for(item.endpoint) }}"
+         {% if ep == item.endpoint %}aria-current="page"{% endif %}>
+        {{ icon(item.icon) }}<span>{{ item.short }}</span>
+      </a>
+    {% endfor %}
+    {% set park = getting_around[0] %}
+    <a class="bottom-link {% if ep == park.endpoint %}is-active{% endif %}" href="{{ url_for(park.endpoint) }}"
+       {% if ep == park.endpoint %}aria-current="page"{% endif %}>{{ icon(park.icon) }}<span>{{ park.short }}</span></a>
+    <button class="bottom-link" type="button" data-nav-toggle aria-controls="sidebar">{{ icon('grid') }}<span>More</span></button>
+  </nav>
+
+  {# ---------- Shared confirm dialog ---------- #}
+  <dialog class="dialog" id="confirm-dialog" aria-labelledby="confirm-title">
+    <form method="dialog">
+      <h2 id="confirm-title" data-confirm-title></h2>
+      <p class="dialog-body" data-confirm-body></p>
+      <div class="dialog-actions">
+        <button class="btn btn-ghost" value="cancel">Cancel</button>
+        <button class="btn btn-primary" value="ok" data-confirm-ok>Confirm</button>
+      </div>
+    </form>
+  </dialog>
+
+  {# Tap to pay: the lifted card is shown on this layer #}
+  <div class="tap-layer" data-tap-layer hidden>
+    <div class="tap-backdrop" data-tap-close></div>
+    <form class="tap-caption tap-sheet" data-tap-sheet novalidate>
+      <p class="tap-ready">{{ icon('check-circle') }} Ready to tap. Choose where you're paying.</p>
+      <div class="tap-fields">
+        <label class="visually-hidden" for="tap-register">Where you're paying</label>
+        <select class="text-input" id="tap-register" data-tap-register>
+          {% for r in tap_registers %}<option value="{{ r.id }}"{% if r.swipe %} data-swipe{% endif %}>{{ r.name }}{% if r.swipe %} (meal swipe){% endif %}</option>{% endfor %}
+        </select>
+        <div class="input-wrap money-input" data-tap-amount-wrap>
+          <span class="prefix" aria-hidden="true">$</span>
+          <label class="visually-hidden" for="tap-amount">Amount</label>
+          <input id="tap-amount" type="text" inputmode="decimal" placeholder="0.00" autocomplete="off" data-tap-amount>
+        </div>
+        <button class="btn btn-primary" type="submit" data-tap-pay>Pay</button>
+      </div>
+      <p class="tap-error" data-tap-error role="alert"></p>
+    </form>
+  </div>
+{% endblock %}
+
+  {% if student %}
+  <dialog class="search-dialog" id="search-dialog" aria-label="Search Viking Hub">
+    <div class="search-box">
+      {{ icon('search') }}
+      <input type="search" placeholder="Search pages, buildings, offices, clubs, classes" autocomplete="off" spellcheck="false"
+             role="combobox" aria-expanded="true" aria-controls="search-results" aria-autocomplete="list" data-search-input>
+      <button class="search-esc" type="button" data-search-close>Esc</button>
+    </div>
+    <div class="search-results" id="search-results" role="listbox" aria-label="Results" data-search-results></div>
+    <p class="search-foot muted small">Short forms work too: try BH, rec or lot 66.</p>
+  </dialog>
+  {% endif %}
+  <div class="toast-region" aria-live="polite" aria-atomic="true"></div>
+  <script type="application/json" id="icon-data">{{ icon_paths()|tojson }}</script>
+  <script type="application/json" id="sound-data">{{ sounds()|tojson }}</script>
+  {% if student %}<script type="application/json" id="alerts-data">{{ alerts|tojson }}</script>
+  <script>window.VH_MOMENT = {{ update_ready|tojson }}; window.VH_PREFS = {{ prefs_global|tojson }}; window.VH_PREVIEW = {{ (app_day.today.strftime('%A, %B ') ~ app_day.today.day if app_day.moved else '')|tojson }};</script>{% endif %}
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

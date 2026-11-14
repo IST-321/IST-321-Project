@@ -1,1 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}Sign in{% endblock %}
+{% block body_class %}auth{% endblock %}
 
+{% block body %}
+<div class="auth-layout">
+  <section class="auth-brand">
+    <img class="auth-brand-logo" src="{{ url_for('static', filename='images/csu-logo-horizontal-white.svg') }}" alt="Cleveland State University">
+    <div class="auth-brand-body">
+      <p class="auth-brand-name">Viking Hub</p>
+      <p class="auth-brand-slogan">Everything a Viking needs for their education.</p>
+      <ul class="auth-features">
+        <li>{{ icon('card') }}<div><strong>Viking Card</strong><span>Balance, meal swipes and tap to pay</span></div></li>
+        <li>{{ icon('calendar') }}<div><strong>Classes and deadlines</strong><span>Today's classes and upcoming assignments</span></div></li>
+        <li>{{ icon('bus') }}<div><strong>Parking and transportation</strong><span>Garages, permits and RTA trips</span></div></li>
+        <li>{{ icon('flag') }}<div><strong>Orientation</strong><span>Your checklist for your first semester</span></div></li>
+      </ul>
+    </div>
+    <img class="auth-brand-viking" src="{{ url_for('static', filename='images/viking-head.svg') }}" alt="">
+  </section>
+
+  <main class="auth-main" id="main">
+    <div class="auth-card">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="notice notice-{{ category }}" role="status">{{ icon('check-circle') }}<span>{{ message }}</span></div>
+        {% endfor %}
+      {% endwith %}
+
+      <h1 class="auth-title">{% if returning %}Welcome back, {{ returning.first_name }}!{% else %}Welcome, Viking!{% endif %}</h1>
+      <p class="auth-subtitle">Sign in with your CSU ID and CampusNet password.</p>
+
+      {% if errors.form %}
+        <div class="form-alert" role="alert">{{ icon('alert') }}<span>{{ errors.form }}</span></div>
+      {% endif %}
+
+      <form class="auth-form" method="post" novalidate data-login-form>
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+        <div class="field {% if errors.student_id %}has-error{% endif %}">
+          <label for="student_id">CSU ID</label>
+          <div class="input-wrap">
+            {{ icon('id') }}
+            <input id="student_id" name="student_id" type="text" inputmode="numeric" maxlength="7"
+                   placeholder="7-digit CSU ID" value="{{ form.student_id }}" aria-describedby="student_id_error"
+                   {% if remembered %}autocomplete="username"{% else %}autocomplete="off" readonly data-no-autofill{% endif %}>
+          </div>
+          <p class="field-error" id="student_id_error">{{ errors.student_id or '' }}</p>
+        </div>
+
+        <div class="field {% if errors.password %}has-error{% endif %}">
+          <label for="password">Password</label>
+          <div class="input-wrap">
+            {{ icon('lock') }}
+            <input id="password" name="password" type="password" placeholder="CampusNet password"
+                   aria-describedby="password_error"
+                   {% if remembered %}autocomplete="current-password"{% else %}autocomplete="new-password" readonly data-no-autofill{% endif %}>
+            <button class="input-action" type="button" data-toggle-password aria-label="Show password" aria-pressed="false">
+              <span class="when-hidden">{{ icon('eye') }}</span><span class="when-shown">{{ icon('eye-off') }}</span>
+            </button>
+          </div>
+          <p class="caps-warning" data-caps hidden>{{ icon('warning') }} Caps Lock is on</p>
+          <p class="field-error" id="password_error">{{ errors.password or '' }}</p>
+        </div>
+
+        <div class="auth-row">
+          <label class="check">
+            <input type="checkbox" name="remember" {% if form.remember %}checked{% endif %}>
+            <span class="check-box" aria-hidden="true">{{ icon('check') }}</span>
+            Remember me
+          </label>
+          <button class="link link-btn" type="button">Forgot password?</button>
+        </div>
+
+        <button class="btn btn-primary btn-block btn-lg" type="submit" data-submit><span>Sign in</span></button>
+      </form>
+
+      <div class="auth-hint">
+        {{ icon('info') }}
+        <p>Your CSU ID is printed on your Viking Card. Your password is the same one you use for CampusNet.</p>
+      </div>
+
+      <p class="auth-help">Trouble signing in? Contact <a class="link" href="https://www.csuohio.edu/ist" target="_blank" rel="noopener">IS&amp;T</a> or call at <a class="link" href="tel:+12166875050">216-687-5050</a>.</p>
+    </div>
+  </main>
+</div>
+{% endblock %}

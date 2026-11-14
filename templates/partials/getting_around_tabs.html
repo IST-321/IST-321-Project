@@ -1,0 +1,7 @@
+{# Tabs across the Getting around pages #}
+<nav class="ga-tabs" aria-label="Getting around">
+  {% for item in getting_around %}
+    <a class="ga-tab {% if current_endpoint == item.endpoint %}is-on{% endif %}" href="{{ url_for(item.endpoint) }}"
+       {% if current_endpoint == item.endpoint %}aria-current="page"{% endif %}>{{ icon(item.icon) }}<span>{{ item.label }}</span></a>
+  {% endfor %}
+</nav>

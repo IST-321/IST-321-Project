@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="tr-page" data-tr-page>
+  {% include 'partials/getting_around_tabs.html' %}
+
+  {# ---------- Report an issue ---------- #}
+  <section class="panel" id="report" aria-labelledby="report-title">
+    <header class="panel-head"><h3 id="report-title">Report a transportation issue</h3></header>
+    <div class="panel-pad report-grid">
+      <form class="report-form" data-report-form novalidate>
+        <div class="form-grid">
+          <label class="form-field"><span class="field-label">What kind of issue?</span>
+            <select class="text-input" name="category" required>
+              <option value="">Choose one</option>
+              {% for c in categories %}<option>{{ c }}</option>{% endfor %}
+            </select>
+          </label>
+          <label class="form-field"><span class="field-label">Where?</span>
+            <select class="text-input" name="location_pick" data-loc-pick required>
+              <option value="">Choose a place</option>
+              {% for l in locations %}<option>{{ l }}</option>{% endfor %}
+            </select>
+          </label>
+        </div>
+        <label class="form-field" data-loc-other hidden><span class="field-label">Describe the location</span>
+          <input class="text-input" name="location_other" maxlength="80" placeholder="For example: the stairs behind the Student Center">
+        </label>
+        <label class="form-field"><span class="field-label">What's wrong?</span>
+          <textarea class="textarea" name="description" maxlength="500" required placeholder="For example: the exit gate on level 2 won't read Viking Cards."></textarea>
+        </label>
+        <label class="form-field"><span class="field-label">Anything else? <span class="muted">(optional)</span></span>
+          <textarea class="textarea short" name="details" maxlength="500" placeholder="Time you noticed it, how often it happens, photos you took"></textarea>
+        </label>
+        <p class="field-error" data-report-error></p>
+        <div class="report-actions">
+          <button class="btn btn-primary" type="submit">Submit report</button>
+          <span class="muted small">Broken gate, dark stairwell, blocked crosswalk? Write it down while it's fresh. For anything urgent, call Parking Services at {{ office.phone }} or CSU Police at {{ escorts.phone }}.</span>
+        </div>
+      </form>
+      <div class="report-history">
+        <h4 class="sub-head">Your reports</h4>
+        <ul class="report-list" data-report-list></ul>
+      </div>
+    </div>
+  </section>
+</div>
+
+</div>
+
+<script type="application/json" id="tr-data">{{ {"reports": reports}|tojson }}</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/transportation.js') }}"></script>
+{% endblock %}

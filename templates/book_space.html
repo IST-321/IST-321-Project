@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="sp-page" data-sp-page data-tab="{{ tab }}">
+
+  <nav class="ga-tabs" aria-label="Book a space">
+    <a class="ga-tab {% if tab == 'library' %}is-on{% endif %}" href="{{ url_for('spaces.index') }}" {% if tab == 'library' %}aria-current="page"{% endif %}>{{ icon('book') }}<span>Library rooms</span></a>
+    <a class="ga-tab {% if tab == 'rec' %}is-on{% endif %}" href="{{ url_for('spaces.index', tab='rec') }}" {% if tab == 'rec' %}aria-current="page"{% endif %}>{{ icon('dumbbell') }}<span>Rec Center</span></a>
+  </nav>
+
+  {% if tab == 'library' %}
+  <div class="mc-layout">
+    <div>
+      <section class="panel" aria-labelledby="room-title">
+        <header class="panel-head"><div><h3 id="room-title">Reserve a library room</h3><p class="muted small">Michael Schwartz Library, Rhodes Tower</p></div></header>
+        <div class="panel-pad">
+          <p class="lock-note" data-sp-lock hidden></p>
+          <div class="room-pick" role="radiogroup" aria-label="Room" data-room-pick>
+            {% for r in rooms %}
+              <button type="button" role="radio" class="room-opt{% if loop.first %} is-on{% endif %}" aria-checked="{{ 'true' if loop.first else 'false' }}" data-room="{{ r.id }}">
+                <strong>{{ r.name }}{% if r.units > 1 %}s ({{ r.units }}){% endif %}</strong>
+                <small>{{ r.where }} · {{ r.who }}</small>
+                <span class="room-text">{{ r.text }}</span>
+              </button>
+            {% endfor %}
+          </div>
+          <div class="lv-days" role="tablist" aria-label="Days" data-room-days></div>
+          <div class="room-length" data-room-length hidden>
+            <span class="field-label">How long</span>
+            <div class="segmented" role="group" aria-label="How long">
+              <button type="button" class="is-on" data-hours="1">1 hour</button>
+              <button type="button" data-hours="2">2 hours</button>
+            </div>
+          </div>
+          <div class="lv-slots" data-room-slots aria-live="polite"></div>
+          <div class="room-course" data-room-course hidden>
+            <label class="field-label" for="rc-course">Course</label>
+            <input class="text-input" id="rc-course" placeholder="For example, ENG 102" maxlength="40">
+            <label class="field-label" for="rc-instructor">Instructor</label>
+            <input class="text-input" id="rc-instructor" placeholder="For example, Prof. Hayes" maxlength="60">
+          </div>
+          <div class="lv-confirm" data-room-confirm hidden>
+            <p data-room-choice></p>
+            <button class="btn btn-primary" type="button" data-room-book>Reserve this room</button>
+          </div>
+          <p class="field-error" data-room-error></p>
+          <div class="room-policy">
+            <h4 class="sub-head">{{ icon('info') }} Before you reserve</h4>
+            <ul>
+              <li>Your reservation is saved in Viking Hub and added to your schedule.</li>
+              <li>Viking Hub isn't linked to the library's own room list, so library staff won't see it. To make sure the room is held for you, also reserve it with the library: call the Library Help Desk at <a class="link" href="tel:+1{{ library.help_desk|replace('-', '') }}">{{ library.help_desk }}</a> or ask at the first floor desk.</li>
+              <li>Can't make it? Cancel at least 2 hours before your start time. Students who repeatedly miss reservations without canceling 2 hours ahead lose online room booking for one semester.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div>
+      <section class="panel" aria-labelledby="my-rooms">
+        <header class="panel-head"><h3 id="my-rooms">My reservations</h3></header>
+        <ul class="loan-list" data-room-mine></ul>
+        <p class="muted small panel-pad">Up to {{ max_rooms }} at a time.</p>
+      </section>
+
+      <section class="panel" aria-labelledby="walkin-title">
+        <header class="panel-head"><h3 id="walkin-title">No reservation needed</h3></header>
+        <ul class="walkin-list">
+          {% for w in walk_in %}
+            <li><strong>{{ w.name }}</strong><small>{{ w.where }}</small><p>{{ w.text }}</p></li>
+          {% endfor %}
+        </ul>
+      </section>
+
+      <section class="panel" aria-labelledby="lib-info">
+        <header class="panel-head"><h3 id="lib-info">Library hours</h3></header>
+        <div class="panel-pad info-card">
+          {% for h in library.hours_text %}<p>{{ h }}</p>{% endfor %}
+          <p class="muted small">Bring your Viking Card to get in after 5 PM and on weekends.</p>
+          <p>{{ icon('phone') }} Library Help Desk: <a class="link" href="tel:+1{{ library.help_desk|replace('-', '') }}">{{ library.help_desk }}</a></p>
+          <div class="link-row">
+            <a class="link" href="{{ library.hours_url }}" target="_blank" rel="noopener">Library hours {{ icon('external') }}</a>
+            <a class="link" href="{{ library.rooms_url }}" target="_blank" rel="noopener">Library rooms {{ icon('external') }}</a>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  {% else %}
+  <div class="mc-layout">
+    <div>
+      <section class="panel" aria-labelledby="crowd-title">
+        <header class="panel-head"><div><h3 id="crowd-title">How busy is it?</h3><p class="muted small">The usual crowd by hour, so you can pick a quieter time</p></div></header>
+        <div class="panel-pad">
+          <div class="lv-days" role="tablist" aria-label="Days" data-rec-days></div>
+          <div class="crowd-chart" data-crowd></div>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="fit-title">
+        <header class="panel-head"><div><h3 id="fit-title">Group fitness</h3><p class="muted small">Free classes for students. Add one and we'll check it against your schedule.</p></div></header>
+        <p class="lock-note" data-sp-lock hidden></p>
+        <ul class="fit-list" data-fit-list></ul>
+      </section>
+    </div>
+
+    <div>
+      <section class="panel" aria-labelledby="rec-info">
+        <header class="panel-head"><h3 id="rec-info">Recreation Center</h3></header>
+        <div class="panel-pad info-card">
+          <p>{{ icon('pin') }} {{ rec.where }}</p>
+          {% for h in rec.hours_text %}<p>{{ h }}</p>{% endfor %}
+          <p class="muted small">Group fitness classes are free for students. Bring your Viking Card to check in.</p>
+          <p>{{ icon('phone') }} <a class="link" href="tel:+1{{ rec.phone|replace('-', '') }}">{{ rec.phone }}</a></p>
+          <div class="link-row">
+            <a class="link" href="{{ rec.fitness }}" target="_blank" rel="noopener">Group fitness {{ icon('external') }}</a>
+            <a class="link" href="{{ rec.site }}" target="_blank" rel="noopener">CSU Rec {{ icon('external') }}</a>
+            <a class="link" href="{{ url_for('campus_map.index', b='RC') }}">On the map</a>
+          </div>
+          <p class="muted small">Class times and rooms can change, so check the Rec's schedule before you go.</p>
+        </div>
+      </section>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script type="application/json" id="sp-data">{{ {'rooms': rooms, 'room_state': rooms_state, 'rec': rec_state}|tojson }}</script>
+<script src="{{ url_for('static', filename='js/spaces.js') }}"></script>
+{% endblock %}

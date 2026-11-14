@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="lv-page" data-lv-page>
+
+  <section class="lv-intro panel">
+    <div class="panel-pad lv-intro-inner">
+      <span class="row-icon">{{ icon('basket') }}</span>
+      <div>
+        <h2>Lift Up Vikes food pantry</h2>
+        <p class="muted">Free groceries and personal care items for students who need extra support. The pantry is walk-in: shoppers go in 15-minute turns, and you can pick your turn ahead of time here so you know when to stop by.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="mc-layout">
+    <div>
+      {# ---------- Plan a visit ---------- #}
+      <section class="panel" aria-labelledby="plan-title">
+        <header class="panel-head"><div><h3 id="plan-title">Plan a visit</h3><p class="muted small">Choose a day, then a 15-minute shopping turn</p></div></header>
+        <div class="panel-pad">
+          <p class="lock-note" data-lv-lock hidden></p>
+          <div class="lv-days" role="tablist" aria-label="Days" data-lv-days></div>
+          <div class="lv-slots" data-lv-slots aria-live="polite"></div>
+          <div class="lv-confirm" data-lv-confirm hidden>
+            <p data-lv-choice></p>
+            <button class="btn btn-primary" type="button" data-lv-book>Reserve this turn</button>
+          </div>
+          <p class="muted small lv-fine">Turns you reserve here are saved in Viking Hub to help you plan. The pantry still serves walk-ins in line order, so arrive a few minutes early.</p>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="mine-title">
+        <header class="panel-head"><h3 id="mine-title">My planned visits</h3></header>
+        <ul class="loan-list" data-lv-mine></ul>
+      </section>
+    </div>
+
+    <aside>
+      <section class="panel" aria-labelledby="pantry-title">
+        <header class="panel-head"><h3 id="pantry-title">Visiting the pantry</h3></header>
+        <div class="panel-pad">
+          <ul class="contact-list">
+            <li>{{ icon('pin') }} <a href="{{ url_for('campus_map.index', b='BH') }}">{{ info.where }}</a></li>
+            <li>{{ icon('building') }} Resource Room: {{ info.resource_room }}</li>
+            <li>{{ icon('phone') }} <a href="tel:+1{{ info.phone|replace('-', '') }}">{{ info.phone }}</a></li>
+            <li>{{ icon('mail') }} <a href="mailto:{{ info.email }}">{{ info.email }}</a></li>
+          </ul>
+          <h4 class="sub-head">Fall 2026 hours</h4>
+          <dl class="hours-list">{% for d, h in hours %}<div><dt>{{ d }}</dt><dd>{{ h }}</dd></div>{% endfor %}</dl>
+          <h4 class="sub-head">How it works</h4>
+          <ul class="rule-list">{% for h in how %}<li>{{ h }}</li>{% endfor %}</ul>
+          <h4 class="sub-head">More help</h4>
+          <ul class="link-stack">
+            {% for l in links %}<li><a class="link" href="{{ l.url }}" target="_blank" rel="noopener">{{ icon(l.icon) }} {{ l.label }}</a></li>{% endfor %}
+            <li><a class="link" href="{{ info.url }}" target="_blank" rel="noopener">{{ icon('external') }} Lift Up Vikes food pantry page</a></li>
+          </ul>
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<script type="application/json" id="lv-data">{{ state|tojson }}</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/lift_up_vikes.js') }}"></script>
+{% endblock %}

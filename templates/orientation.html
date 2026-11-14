@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% macro longship() -%}
+<svg class="longship" viewBox="0 0 120 84" aria-hidden="true">
+  <line x1="60" y1="4" x2="60" y2="56" class="ls-mast"/>
+  <path class="ls-sail" d="M36 10h48l-3 38c-14 4-28 4-42 0z"/>
+  <path class="ls-stripe" d="M44 10h8l-1 40.6c-2.6-.2-5.2-.5-7.8-.9zM60 10h8l-.3 41.6c-2.6.1-5.2.1-7.7 0zM76 10h8l-3 38c-1.7.5-3.4.9-5.1 1.2z"/>
+  <path class="ls-hull" d="M6 54c22 10 86 10 108 0l-8 12c-14 8-78 8-92 0z"/>
+  <path class="ls-prow" d="M108 56c4-6 4-16-1-22 5 1 9 6 9 13 0 3-1 5-2 7l1 2c-3 1-5 1-7 0z"/>
+  <path class="ls-prow" d="M12 56c-4-6-4-14 1-19-5 1-8 5-8 11 0 3 1 5 2 7z"/>
+  <g class="ls-shields">
+    <circle cx="26" cy="58" r="4"/><circle cx="38" cy="59.5" r="4"/><circle cx="50" cy="60.3" r="4"/>
+    <circle cx="62" cy="60.5" r="4"/><circle cx="74" cy="60.3" r="4"/><circle cx="86" cy="59.5" r="4"/><circle cx="98" cy="58" r="4"/>
+  </g>
+</svg>
+{%- endmacro %}
+
+{% block content %}
+<div class="or-page {% if progress.percent == 100 %}is-complete{% endif %}" data-or-page>
+
+  {# ---------- Progress: the longship sails as steps are completed ---------- #}
+  <section class="panel or-progress" aria-labelledby="or-title">
+    <div class="or-progress-top">
+      <div>
+        <h2 id="or-title">Your orientation progress</h2>
+        <p class="muted" data-or-message>{{ progress.message }}</p>
+      </div>
+      <p class="or-percent"><span data-or-percent>{{ progress.percent }}</span>%</p>
+    </div>
+
+    <div class="voyage" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ progress.percent }}"
+         aria-label="Orientation progress" data-or-bar>
+      <div class="voyage-sea">
+        <svg class="voyage-wave" viewBox="0 0 400 24" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0 12 Q 12.5 4 25 12 T 50 12 T 75 12 T 100 12 T 125 12 T 150 12 T 175 12 T 200 12 T 225 12 T 250 12 T 275 12 T 300 12 T 325 12 T 350 12 T 375 12 T 400 12 V24 H0z"/>
+        </svg>
+        <div class="voyage-fill" style="width: {{ progress.percent }}%"></div>
+      </div>
+      <div class="voyage-ship" style="left: {{ progress.percent }}%">{{ longship() }}</div>
+      <span class="voyage-goal">{{ icon('flag') }}</span>
+    </div>
+
+    <dl class="or-counts">
+      <div><dt>Complete</dt><dd data-or-count="complete">{{ progress.complete }}</dd></div>
+      <div><dt>In progress</dt><dd data-or-count="in_progress">{{ progress.in_progress }}</dd></div>
+      <div><dt>Not started</dt><dd data-or-count="not_started">{{ progress.not_started }}</dd></div>
+    </dl>
+
+    <p class="or-sync">{{ icon('refresh') }} <span>CSU automatically updates <strong>required</strong> steps as you complete them in its own systems, such as CampusNet and Blackboard. Only the <strong>recommended</strong> steps in Campus life are marked by you, here.</span></p>
+  </section>
+
+  {# ---------- Checklist ---------- #}
+  <section class="panel" aria-labelledby="checklist-title">
+    <header class="panel-head"><h3 id="checklist-title">Orientation checklist</h3></header>
+    {% for category, tasks in groups.items() %}
+      <h4 class="or-group">{{ category }}</h4>
+      <ul class="task-list">
+        {% for t in tasks %}
+          <li class="task status-{{ t.status|lower|replace(' ', '-') }}" data-task="{{ t.id }}">
+            <span class="task-mark" aria-hidden="true">{{ icon('check') }}</span>
+            <div class="task-main">
+              <div class="task-title">
+                <strong>{{ t.title }}</strong>
+                <span class="tag {% if t.requirement == 'Required' %}tag-required{% endif %}">{{ t.requirement }}</span>
+              </div>
+              <p>{{ t.description }}</p>
+              {% if t.url %}
+                <a class="link" href="{{ t.url }}" {% if t.external %}target="_blank" rel="noopener"{% endif %}>{{ t.link_label }}{% if t.external %} {{ icon('external') }}{% endif %}</a>
+              {% endif %}
+            </div>
+            {% if t.requirement == 'Required' %}
+              <p class="task-status task-auto">{{ icon('refresh') }} {{ t.status }} · updated by CSU</p>
+            {% else %}
+              <div class="segmented small task-status" role="radiogroup" aria-label="Status for {{ t.title }}">
+                {% for s in statuses %}
+                  <button type="button" role="radio" data-status="{{ s }}" aria-checked="{{ 'true' if s == t.status else 'false' }}"
+                          class="{% if s == t.status %}is-on{% endif %}">{{ s }}</button>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% endfor %}
+  </section>
+
+  {% include 'partials/orientation_resources.html' %}
+</div>
+
+<dialog class="dialog celebrate" id="celebrate-dialog" aria-labelledby="celebrate-title" data-home="{{ url_for('dashboard.index') }}">
+  <form method="dialog">
+    <img class="celebrate-logo" src="{{ url_for('static', filename='images/cleveland-state-viking.svg') }}" alt="Magnus, the Cleveland State Vikings mascot">
+    <h2 id="celebrate-title">Welcome aboard, Viking!</h2>
+    <p class="dialog-body">You've completed every orientation step. Your first semester at Cleveland State is ready to set sail, and Magnus is proud of you.</p>
+    <p class="celebrate-note">Your first semester resources and the new student directory are now under <strong>Resources</strong> in the menu.</p>
+    <div class="celebrate-actions"><button class="btn btn-primary btn-lg" value="ok">Onward</button></div>
+  </form>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/orientation.js') }}"></script>
+{% endblock %}

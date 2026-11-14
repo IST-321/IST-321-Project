@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+{% from 'partials/viking_card_visual.html' import viking_card_visual %}
+
+{% block content %}
+<div class="vc-page" data-vc-page data-locked="{{ 1 if card.is_locked else 0 }}">
+
+  {# ---------- 1. Card ---------- #}
+  <section class="vc-stage" aria-label="Your Viking Card">
+    <div class="vcard-holder">{{ viking_card_visual(student, card, interactive=true) }}</div>
+    <p class="vc-hint">
+      <span class="when-unlocked">{{ icon('info') }} Tap your card to use tap to pay.</span>
+      <span class="when-locked">{{ icon('lock') }} Your card is locked. Unlock it to use tap to pay.</span>
+    </p>
+    <div class="vc-status-row">
+      <div>
+        <span class="eyebrow">Card status</span>
+        <p><span class="when-unlocked status status-ok">Active</span><span class="when-locked status status-locked">{{ icon('lock') }} Locked</span></p>
+      </div>
+      <button class="btn btn-ghost when-unlocked" type="button" data-lock="1">{{ icon('lock') }}<span>Lock card</span></button>
+      <button class="btn btn-primary when-locked" type="button" data-lock="0">{{ icon('unlock') }}<span>Unlock card</span></button>
+    </div>
+  </section>
+
+  {# ---------- 2. Balance and meal swipes ---------- #}
+  <section class="panel" id="balance" aria-labelledby="balance-title">
+    <header class="panel-head"><h3 id="balance-title">Balance</h3></header>
+    <div class="panel-pad">
+      <div class="balance-row">
+        <div>
+          <span class="eyebrow">Viking Card balance</span>
+          <p class="balance" data-balance>{{ card.balance_cents|money }}</p>
+          <p class="muted small">Includes your fall Dining Dollars</p>
+        </div>
+        {% if meal %}
+        <div>
+          <span class="eyebrow">Meal swipes left</span>
+          <p class="balance"><span data-swipes>{{ meal.swipes_remaining }}</span> <small class="balance-of">of {{ meal.swipes_total }}</small></p>
+          <div class="meter" role="img" aria-label="{{ meal.swipes_remaining }} of {{ meal.swipes_total }} meal swipes left">
+            <div class="meter-fill" style="width: {{ (meal.swipes_remaining / meal.swipes_total * 100)|round|int }}%"></div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="forecast" data-forecast aria-live="polite"></div>
+
+      {% if card_lock %}<p class="lock-note">{{ icon('lock') }}<span>{{ card_lock }}</span></p>{% endif %}
+      <form class="add-funds when-unlocked" id="add-funds" data-add-funds novalidate>
+        <label class="field-label" for="fund-amount">Add funds</label>
+        <div class="amount-row">
+          <div class="segmented" role="group" aria-label="Quick amounts">
+            <button type="button" data-amount="10">$10</button>
+            <button type="button" data-amount="25">$25</button>
+            <button type="button" data-amount="50">$50</button>
+          </div>
+          <div class="input-wrap money-input">
+            <span class="prefix" aria-hidden="true">$</span>
+            <input id="fund-amount" name="amount" type="text" inputmode="decimal" placeholder="0.00" autocomplete="off" aria-describedby="fund-error">
+          </div>
+          <button class="btn btn-primary" type="submit">{{ icon('plus') }}<span>Add funds</span></button>
+        </div>
+        <p class="field-error" id="fund-error"></p>
+      </form>
+
+      <div class="locked-note when-locked">
+        {{ icon('lock') }}
+        <p>Your card needs to be unlocked before you can add funds.</p>
+      </div>
+
+      <div class="low-alert-row">
+        <div class="low-alert-text">
+          <label class="field-label" for="low-alert">Low balance alert</label>
+          <p class="muted small">When a purchase drops your balance below this amount, you'll get an alert with quick ways to add funds or lock your card.</p>
+        </div>
+        <select class="text-input" id="low-alert" data-low-alert>
+          {% for c in low_choices %}
+            <option value="{{ c }}" {% if c == card.low_alert_cents %}selected{% endif %}>{{ c|money if c else 'Off' }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+  </section>
+
+  {# ---------- Spending by place ---------- #}
+  <section class="panel" aria-labelledby="spend-title">
+    <header class="panel-head">
+      <h3 id="spend-title">Spending by place</h3>
+      <span class="muted small" data-spend-total></span>
+    </header>
+    <div class="panel-pad">
+      <div class="place-chart" data-place-chart></div>
+      <p class="muted small chart-hint">Select a place to see those purchases in your activity.</p>
+    </div>
+  </section>
+
+  {# ---------- 3. Recent activity ---------- #}
+  <section class="panel no-clip" aria-labelledby="activity-title">
+    <header class="panel-head">
+      <h3 id="activity-title">Recent activity</h3>
+      <button class="text-btn" type="button" data-txn-close hidden>Show fewer</button>
+    </header>
+    <div class="txn-filter-row" data-txn-filter hidden>
+      <div class="segmented small" role="group" aria-label="Filter activity">
+        <button type="button" class="is-on" data-filter="all">All</button>
+        <button type="button" data-filter="Purchase">Purchases</button>
+        <button type="button" data-filter="Deposit">Deposits</button>
+        <button type="button" data-filter="Meal swipe">Swipes</button>
+      </div>
+      <button class="place-chip" type="button" data-place-clear hidden></button>
+    </div>
+    <ul class="txn-list" data-txn-list>
+      {% for t in transactions %}
+        <li class="txn" data-type="{{ t.txn_type }}" data-place="{{ place_name(t.location) }}">
+          <span class="txn-icon txn-{{ t.txn_type|lower|replace(' ', '-') }}">{{ icon({'Deposit': 'plus', 'Purchase': 'receipt', 'Meal swipe': 'meal'}[t.txn_type]) }}</span>
+          <div class="txn-main">
+            <strong>{{ t.location }}</strong>
+            <small>{{ t.txn_type }} · {{ t.occurred_at|nice_date('%b %d, %I:%M %p') }}</small>
+          </div>
+          <span class="txn-amount {% if t.amount_cents > 0 %}is-credit{% endif %}">
+            {% if t.amount_cents > 0 %}+{{ t.amount_cents|money }}{% elif t.amount_cents < 0 %}{{ t.amount_cents|money }}{% else %}1 swipe{% endif %}
+          </span>
+        </li>
+      {% endfor %}
+    </ul>
+    <button class="panel-more txn-toggle" type="button" data-txn-toggle>See all ({{ transactions|length }})</button>
+  </section>
+
+  {# ---------- 4. Meal plan and card services, side by side ---------- #}
+  <div class="vc-pair">
+    {% if meal %}
+    <section class="panel" aria-labelledby="meal-title">
+      <header class="panel-head">
+        <h3 id="meal-title">Meal plan</h3>
+        <span class="muted small">{{ meal.term }}</span>
+      </header>
+      <div class="panel-pad">
+        <p class="meal-name">{{ meal.plan_name }}</p>
+        <p class="muted small">{{ meal.semester_rate_cents|money }} per semester. Meal swipes get you into Viking Marketplace, the all-you-care-to-eat dining hall on the second floor of the Student Center.</p>
+        <dl class="stat-list inline">
+          <div><dt>Swipes per semester</dt><dd>{{ meal.swipes_total }}</dd></div>
+          <div><dt>Dining Dollars</dt><dd>{{ meal.dining_dollars_cents|money }}</dd></div>
+        </dl>
+        <p class="muted small">Dining Dollars work at Viking Food Co. locations including Chick-fil-A, Starbucks, Viking Express, Hissho Sushi, Market on Euclid and Viking Public House.</p>
+        <div class="link-row">
+          <a class="link" href="https://vikingfoodco.campusdish.com/" target="_blank" rel="noopener">Menus and hours {{ icon('external') }}</a>
+          <a class="link" href="https://www.csuohio.edu/residence-life/housing-rates" target="_blank" rel="noopener">Meal plan rates {{ icon('external') }}</a>
+          <a class="link" href="tel:+12166875001">Dining: 216-687-5001</a>
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    <section class="panel" aria-labelledby="services-title">
+      <header class="panel-head"><h3 id="services-title">Card services</h3></header>
+      <ul class="row-list compact">
+        <li><button class="row-link" type="button" data-replace-open>
+          <span class="row-icon">{{ icon('refresh') }}</span>
+          <span class="row-text"><strong>Replace my card</strong><small>Replace a lost, stolen, or damaged card.</small></span>
+          {{ icon('chevron-right', 'row-chevron') }}</button></li>
+        <li><a class="row-link" href="https://www.csuohio.edu/vikingcard/online-card-office" target="_blank" rel="noopener">
+          <span class="row-icon">{{ icon('card') }}</span>
+          <span class="row-text"><strong>Online Card Office</strong><small>Deposits and lost card reports</small></span>
+          {{ icon('external', 'row-chevron') }}</a></li>
+        <li><a class="row-link" href="https://www.csuohio.edu/access-security/submit-access-requests" target="_blank" rel="noopener">
+          <span class="row-icon">{{ icon('id') }}</span>
+          <span class="row-text"><strong>Access request (AAR)</strong><small>Building or room access on your card</small></span>
+          {{ icon('external', 'row-chevron') }}</a></li>
+      </ul>
+      <div class="panel-pad request-list" data-request-list {% if not card_requests %}hidden{% endif %}>
+        <span class="eyebrow">Your replacement requests</span>
+        {% for r in card_requests %}
+          <p class="request-item">{{ icon('refresh') }} <span><strong>{{ r.reason }}</strong> · saved {{ r.created_at|nice_date('%b %d, %Y') }}<br><small>{{ r.details }}</small></span></p>
+        {% endfor %}
+      </div>
+      <div class="office-info">
+        <p><strong>Viking Card Office</strong></p>
+        <p>{{ icon('pin') }} Berkman Hall, Room 112, 1899 East 22nd Street</p>
+        <p>{{ icon('clock') }} Monday to Friday, 9 AM to 4 PM</p>
+        <p>{{ icon('phone') }} <a href="tel:+12168759888">216-875-9888</a></p>
+        <p>{{ icon('mail') }} <a href="mailto:vcard.office@csuohio.edu">vcard.office@csuohio.edu</a></p>
+      </div>
+    </section>
+  </div>
+</div>
+
+{# ---------- Replacement dialog ---------- #}
+<dialog class="dialog" id="replace-dialog" aria-labelledby="replace-title">
+  <form method="dialog">
+    <div data-replace-step="form">
+      <h2 id="replace-title">Replace my card</h2>
+      <p class="dialog-body">Choose what happened and add a short explanation. We'll save the request and show you how to finish it with the Viking Card Office.</p>
+      <fieldset class="choice-list two-col">
+        <legend class="field-label">What happened?</legend>
+        {% for r in reasons %}
+          <label class="choice"><input type="radio" name="reason" value="{{ r }}" {% if loop.first %}checked{% endif %}><span>{{ r }}</span></label>
+        {% endfor %}
+      </fieldset>
+      <label class="field-label" for="replace-details">Briefly explain the situation</label>
+      <textarea class="textarea" id="replace-details" maxlength="500" placeholder="For example: I think I left it in the Student Center on Tuesday afternoon." aria-describedby="replace-error"></textarea>
+      <p class="field-error" id="replace-error"></p>
+      <p class="muted small">Lost and stolen cards have a $20 replacement fee. Cards worn out from normal use are replaced free when you bring the old card in.</p>
+      <div class="dialog-actions">
+        <button class="btn btn-ghost" value="cancel" formnovalidate>Cancel</button>
+        <button class="btn btn-primary" type="button" data-replace-submit>Save request</button>
+      </div>
+    </div>
+    <div data-replace-step="done" hidden>
+      <h2>Request saved</h2>
+      <p class="dialog-body">To finish your replacement, schedule a pickup with the Viking Card Office and bring a current photo ID. If your card was lost or stolen, report it in the Online Card Office first.</p>
+      <div class="dialog-actions">
+        <a class="btn btn-ghost" href="https://www.csuohio.edu/vikingcard/online-card-office" target="_blank" rel="noopener">Online Card Office</a>
+        <button class="btn btn-primary" value="done">Done</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+<script type="application/json" id="card-insights">{{ insights|tojson }}</script>
+<script src="{{ url_for('static', filename='js/viking_card.js') }}"></script>
+{% endblock %}
