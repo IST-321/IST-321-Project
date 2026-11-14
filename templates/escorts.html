@@ -43,6 +43,16 @@
         {% set campus %}{% include 'partials/campus_map_svg.html' %}{% endset %}
         {{ campus|replace('</svg>', stop_layer ~ '</svg>')|replace('data-cmap', 'data-escort-svg')|safe }}
         <div class="map-tip" data-esc-tip hidden></div>
+        {# Phones only: full screen, zoom buttons and a hint #}
+        <div class="esc-phone-tools">
+          <button class="btn btn-ghost btn-sm" type="button" data-esc-expand>{{ icon('expand') }}<span>Full screen</span></button>
+        </div>
+        <div class="map-zoom esc-zoom" role="group" aria-label="Zoom">
+          <button class="icon-btn" type="button" data-esc-zoom="in" aria-label="Zoom in">{{ icon('plus') }}</button>
+          <button class="icon-btn" type="button" data-esc-zoom="out" aria-label="Zoom out"><svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 10.8h16v2.4H4z"/></svg></button>
+          <button class="icon-btn" type="button" data-esc-zoom="reset" aria-label="Show the whole area">{{ icon('refresh') }}</button>
+        </div>
+        <p class="map-turn-hint">{{ icon('refresh') }} Turn your phone sideways for a bigger map. Pinch to zoom.</p>
         <figcaption><span class="esc-key-line"></span> Escort coverage area, traced from CSU Police's perimeter map. Select a numbered pickup point to request an escort.</figcaption>
       </figure>
       <div class="escort-info">
@@ -92,5 +102,6 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='js/map_view.js') }}"></script>
 <script src="{{ url_for('static', filename='js/transportation.js') }}"></script>
 {% endblock %}

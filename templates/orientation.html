@@ -56,7 +56,7 @@
       <h4 class="or-group">{{ category }}</h4>
       <ul class="task-list">
         {% for t in tasks %}
-          <li class="task status-{{ t.status|lower|replace(' ', '-') }}" data-task="{{ t.id }}">
+          <li class="task status-{{ t.status|lower|replace(' ', '-') }}" id="task-{{ t.title|slug }}" data-task="{{ t.id }}">
             <span class="task-mark" aria-hidden="true">{{ icon('check') }}</span>
             <div class="task-main">
               <div class="task-title">
@@ -69,7 +69,7 @@
               {% endif %}
             </div>
             {% if t.requirement == 'Required' %}
-              <p class="task-status task-auto">{{ icon('refresh') }} {{ t.status }} · updated by CSU</p>
+              <p class="task-status task-auto">{{ icon('refresh') }} {{ t.status }}</p>
             {% else %}
               <div class="segmented small task-status" role="radiogroup" aria-label="Status for {{ t.title }}">
                 {% for s in statuses %}

@@ -4,6 +4,7 @@ Balances and card controls here are kept in Viking Hub's own database. They do
 not connect to the CSU Online Card Office.
 """
 import re
+import statistics
 from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
 
@@ -20,7 +21,9 @@ MIN_DEPOSIT = 500      # $5.00
 MAX_DEPOSIT = 50000    # $500.00
 REPLACEMENT_REASONS = ["Lost", "Stolen", "Damaged", "Name change"]
 TERM_END = date(2026, 12, 12)      # last day of the fall semester
-LOW_CHOICES = [500, 1000, 2000, 0]  # low balance alert options; 0 = off
+LOW_CHOICES = [(3, "3 days"), (7, "1 week"), (14, "2 weeks"), (0, "Off")]  # warn when the balance lasts less than this
+ALMOST_EMPTY = 500        # under $5 always counts as low
+ONE_TIME_MIN = 2500       # a purchase must be at least $25 (and well above usual) to count as one-time
 MAX_TAP = 10000                     # $100.00 per tap purchase
 
 # Registers a tap purchase can be made at. Viking Marketplace uses a meal swipe.
@@ -60,22 +63,21 @@ def insights(sid):
     days_left = max(1, (TERM_END - today).days)
     weeks_left = days_left / 7
 
-    spent14 = -(query_one(
-        "SELECT COALESCE(SUM(amount_cents), 0) AS s FROM card_transactions WHERE student_id = ? AND txn_type = 'Purchase' AND occurred_at >= ?",
-        (sid, since14))["s"])
-    pace = spent14 / 14
-    money_info = {"pace": round(pace), "pace_label": money(round(pace)), "term_end": _long_date(TERM_END)}
+    pace, one_time = usual_pace(sid, now)
+    money_info = {"pace": round(pace), "pace_label": money(round(pace)), "term_end": _long_date(TERM_END),
+                  "one_time": one_time}
+    low_days = card["low_alert_days"]
     if pace > 0:
         lasts = int(card["balance_cents"] // pace)
         runs_out = today + timedelta(days=lasts)
         before_end = runs_out < TERM_END
         need = max(0, round(pace * days_left) - card["balance_cents"])
-        # Only a balance that runs out within a week is flagged; further out it's just a heads-up
         money_info.update(runs_out=_long_date(runs_out) if lasts < 365 else None, before_end=before_end,
-                          short=lasts < 7, days=lasts,
-                          need=need, need_label=money(-(-need // 100) * 100))  # rounded up to whole dollars
+                          days=lasts, need=need, need_label=money(-(-need // 100) * 100))  # rounded up to whole dollars
     else:
-        money_info.update(runs_out=None, before_end=False, short=False, days=None, need=0, need_label=money(0))
+        money_info.update(runs_out=None, before_end=False, days=None, need=0, need_label=money(0))
+    # Same rule as the low balance alert, so the warning and the alert always agree
+    money_info["short"] = is_low(card["balance_cents"], pace, low_days)
 
     swipe_info = None
     if meal:
@@ -99,9 +101,9 @@ def insights(sid):
         places[name]["spent"] += r["spent"]
         places[name]["count"] += r["n"]
     by_place = sorted(places.values(), key=lambda p: -p["spent"])
-    if len(by_place) > 6:
-        rest = by_place[5:]
-        by_place = by_place[:5] + [{"place": "Other", "spent": sum(p["spent"] for p in rest),
+    if len(by_place) > 8:
+        rest = by_place[7:]
+        by_place = by_place[:7] + [{"place": "Other", "spent": sum(p["spent"] for p in rest),
                                     "count": sum(p["count"] for p in rest),
                                     "includes": [p["place"] for p in rest]}]
     for p in by_place:
@@ -110,28 +112,37 @@ def insights(sid):
     return {"balance": card["balance_cents"], "balance_label": money(card["balance_cents"]),
             "money": money_info, "swipes": swipe_info, "by_place": by_place,
             "total_30": total, "total_30_label": money(total),
-            "low_alert": card["low_alert_cents"], "locked": bool(card["is_locked"])}
+            "low_alert_days": low_days, "locked": bool(card["is_locked"])}
 
 
-def card_lock():
-    if previewing():
-        return (f"Tap to pay and deposits happen on the real day, November 12. "
-                f"You're previewing {day_label(project_today())}, so go back to November 12 to use them.")
-    return None
+def usual_pace(sid, now=None):
+    """Average daily spending over the last two weeks, leaving out one-time purchases.
+
+    A purchase counts as one-time when it's at least $25 and more than three times a typical
+    purchase, like a $100 Campus Store order. Those would make every day look expensive.
+    """
+    now = now or project_now()
+    since14 = (now - timedelta(days=14)).isoformat(timespec="minutes")
+    since30 = (now - timedelta(days=30)).isoformat(timespec="minutes")
+    recent = [-r["amount_cents"] for r in query_all(
+        "SELECT amount_cents FROM card_transactions WHERE student_id = ? AND txn_type = 'Purchase' AND occurred_at >= ?",
+        (sid, since30))]
+    typical = statistics.median(recent) if recent else 0
+    cap = max(ONE_TIME_MIN, 3 * typical)
+    rows = query_all(
+        """SELECT location, amount_cents FROM card_transactions
+           WHERE student_id = ? AND txn_type = 'Purchase' AND occurred_at >= ? ORDER BY occurred_at""", (sid, since14))
+    regular = sum(-r["amount_cents"] for r in rows if -r["amount_cents"] <= cap)
+    one_time = [{"place": place_name(r["location"]), "label": money(-r["amount_cents"])}
+                for r in rows if -r["amount_cents"] > cap]
+    return regular / 14, one_time
 
 
-def _check_low(sid, new_balance):
-    """Send exactly one alert when the balance drops below the student's threshold; re-arm once it's back above."""
-    card = _card(sid)
-    threshold = card["low_alert_cents"]
-    db = get_db()
-    if threshold and new_balance < threshold and not card["low_alerted"]:
-        add_alert(sid, "card", f"Viking Card balance is low: {money(new_balance)}",
-                  f"Your balance dropped below {money(threshold)}. Add funds, or lock your card if it isn't with you.",
-                  "card", "viking_card.index#balance", actions=["add_funds", "lock_card"])
-        db.execute("UPDATE viking_cards SET low_alerted = 1 WHERE student_id = ?", (sid,))
-    elif not threshold or new_balance >= threshold:
-        db.execute("UPDATE viking_cards SET low_alerted = 0 WHERE student_id = ?", (sid,))
+def is_low(balance, pace, low_days):
+    """Low means the balance won't last the chosen number of days at the usual pace, or it's almost empty."""
+    if not low_days:
+        return False
+    return balance < ALMOST_EMPTY or (pace > 0 and balance / pace < low_days)
 
 
 def _money_amount(raw):
@@ -158,6 +169,31 @@ def _txn_json(row):
         "when": nice_date(row["occurred_at"], "%b %d, %I:%M %p"),
         "place": place_name(row["location"]),
     }
+
+
+def card_lock():
+    if previewing():
+        return (f"Tap to pay and deposits happen on the real day, November 12. "
+                f"You're previewing {day_label(project_today())}, so go back to November 12 to use them.")
+    return None
+
+
+def _check_low(sid, new_balance):
+    """Send exactly one alert when the balance becomes low; re-arm once it isn't low anymore."""
+    card = _card(sid)
+    pace, _ = usual_pace(sid)
+    low = is_low(new_balance, pace, card["low_alert_days"])
+    db = get_db()
+    if low and not card["low_alerted"]:
+        days = int(new_balance // pace) if pace > 0 else 0
+        body = (f"At your usual pace, {money(new_balance)} lasts about {days} day{'' if days == 1 else 's'}. "
+                if pace > 0 and new_balance >= ALMOST_EMPTY else f"Your balance is down to {money(new_balance)}. ")
+        add_alert(sid, "card", "Viking Card balance is running low",
+                  body + "Add funds, or lock your card if it isn't with you.",
+                  "card", "viking_card.index#add-funds", actions=["add_funds", "lock_card"])
+        db.execute("UPDATE viking_cards SET low_alerted = 1 WHERE student_id = ?", (sid,))
+    elif not low:
+        db.execute("UPDATE viking_cards SET low_alerted = 0 WHERE student_id = ?", (sid,))
 
 
 @bp.route("/viking-card")
@@ -214,7 +250,7 @@ def add_funds():
     )
     db.execute("UPDATE viking_cards SET balance_cents = ? WHERE student_id = ?", (new_balance, sid))
     add_alert(sid, "card", "Viking Card balance updated",
-              f"{money(cents)} was added. Your balance is now {money(new_balance)}.", "card", "viking_card.index")
+              f"{money(cents)} was added. Your balance is now {money(new_balance)}.", "card", "viking_card.index#activity")
     _check_low(sid, new_balance)
     db.commit()
     txn = query_one("SELECT * FROM card_transactions WHERE id = ?", (cur.lastrowid,))
@@ -323,16 +359,18 @@ def tap_purchase():
 def set_low_alert():
     sid = session["student_id"]
     try:
-        cents = int((request.get_json(silent=True) or {}).get("cents"))
+        days = int((request.get_json(silent=True) or {}).get("days"))
     except (TypeError, ValueError):
-        abort(400, description="Choose an amount.")
-    if cents not in LOW_CHOICES:
-        abort(400, description="Choose an amount.")
+        abort(400, description="Choose when to be warned.")
+    if days not in dict(LOW_CHOICES):
+        abort(400, description="Choose when to be warned.")
     card = _card(sid)
-    # Already below the new line counts as already alerted, so changing the setting never sends an alert by itself
-    below = bool(cents) and card["balance_cents"] < cents
+    pace, _ = usual_pace(sid)
+    # Already low counts as already alerted, so changing the setting never sends an alert by itself
+    low = is_low(card["balance_cents"], pace, days)
     db = get_db()
-    db.execute("UPDATE viking_cards SET low_alert_cents = ?, low_alerted = ? WHERE student_id = ?", (cents, int(below), sid))
+    db.execute("UPDATE viking_cards SET low_alert_days = ?, low_alerted = ? WHERE student_id = ?", (days, int(low), sid))
     db.commit()
-    return jsonify(message=f"We'll alert you below {money(cents)}" if cents else "Low balance alerts are off",
+    label = dict(LOW_CHOICES)[days]
+    return jsonify(message=f"We'll warn you when your balance lasts less than {label}" if days else "Low balance warnings are off",
                    insights=insights(sid))

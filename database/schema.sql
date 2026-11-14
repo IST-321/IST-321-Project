@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS viking_cards (
     is_locked       INTEGER NOT NULL DEFAULT 0,
     locked_at       TEXT,
     issued_on       TEXT NOT NULL,
-    low_alert_cents INTEGER NOT NULL DEFAULT 1000,  -- alert when the balance drops below this; 0 = off
+    low_alert_days  INTEGER NOT NULL DEFAULT 7,     -- warn when the balance lasts fewer days than this at the usual pace; 0 = off
     low_alerted     INTEGER NOT NULL DEFAULT 0      -- 1 once the low balance alert was sent, until funds are added
 );
 

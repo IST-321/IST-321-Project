@@ -12,7 +12,7 @@
   </header>
   <ul class="news-list" data-ann-list>
     {% for a in announcements %}
-      <li data-cat="{{ a.category }}">
+      <li data-cat="{{ a.category }}" id="ann-{{ a.title|slug }}">
         <span class="row-icon">{{ icon(a.icon) }}</span>
         <div>
           <span class="news-cat">{{ a.category }}</span>

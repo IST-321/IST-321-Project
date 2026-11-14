@@ -1,6 +1,6 @@
 {# First semester resources and the new student directory, shared by Orientation and Resources #}
   {# ---------- Resources ---------- #}
-  <section class="panel" aria-labelledby="res-title">
+  <section class="panel" aria-labelledby="res-title" data-collapsible>
     <header class="panel-head"><h3 id="res-title">First semester resources</h3></header>
     <ul class="resource-grid">
       {% for r in resources %}
@@ -17,7 +17,7 @@
   </section>
 
   {# ---------- New student directory ---------- #}
-  <section class="panel" aria-labelledby="dir-title">
+  <section class="panel" aria-labelledby="dir-title" data-collapsible>
     <header class="panel-head"><h3 id="dir-title">New student directory</h3></header>
     <div class="directory">
       {% for category, entries in directory %}

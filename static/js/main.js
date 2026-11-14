@@ -61,19 +61,32 @@
     },
 
     /** Promise-based confirm using the shared dialog. Resolves true or false. */
-    confirm({ title, body, confirmLabel = "Confirm", danger = false }) {
+    confirm({ title, body, confirmLabel = "Confirm", danger = false, list = null, typeToConfirm = null }) {
       const dlg = $("#confirm-dialog");
       if (!dlg) return Promise.resolve(window.confirm(title));
       $("[data-confirm-title]", dlg).textContent = title;
       $("[data-confirm-body]", dlg).textContent = body || "";
+      // Optional list of what will happen
+      const ul = $("[data-confirm-list]", dlg);
+      ul.hidden = !(list && list.length);
+      ul.innerHTML = (list || []).map((x) => `<li>${esc(x)}</li>`).join("");
+      // Optional "type the word to confirm" step, for things that can't be undone
+      const wrap = $("[data-confirm-type-wrap]", dlg);
+      const typed = $("[data-confirm-type]", dlg);
+      wrap.hidden = !typeToConfirm;
+      typed.value = "";
+      $("[data-confirm-type-word]", dlg).textContent = typeToConfirm || "";
       const ok = $("[data-confirm-ok]", dlg);
       ok.textContent = confirmLabel;
       ok.className = `btn ${danger ? "btn-danger" : "btn-primary"}`;
+      const match = () => !typeToConfirm || typed.value.trim().toLowerCase() === typeToConfirm.toLowerCase();
+      ok.disabled = !match();
+      typed.oninput = () => { ok.disabled = !match(); };
       dlg.returnValue = "";
       dlg.showModal();
-      ok.focus();
+      (typeToConfirm ? typed : ok).focus();
       return new Promise((resolve) => {
-        dlg.addEventListener("close", () => resolve(dlg.returnValue === "ok"), { once: true });
+        dlg.addEventListener("close", () => resolve(dlg.returnValue === "ok" && match()), { once: true });
       });
     },
   };
@@ -218,6 +231,11 @@
   const sheet = tapLayer && $("[data-tap-sheet]", tapLayer);
   function resetSheet() {
     if (!sheet) return;
+    // Show the balance here too, since the lifted card covers the one on the page
+    const shown = $$("[data-balance]").find((el) => !el.closest("[data-tap-sheet]"));
+    const bal = $("[data-tap-balance]", sheet);
+    bal.textContent = shown ? shown.textContent : "";
+    bal.parentElement.hidden = !shown;
     $("[data-tap-amount]", sheet).value = "";
     $("[data-tap-error]", sheet).textContent = window.VH_PREVIEW
       ? `Tap to pay works on the real day, November 12. You're previewing ${window.VH_PREVIEW}.` : "";
@@ -606,6 +624,77 @@
     clearTimeout(shakeHorn.t);
     shakeHorn.t = setTimeout(() => horn.classList.remove("is-blowing"), 850);
   }
+
+  /* =========================================================
+     Collapsible panels on phones: panels marked data-collapsible start
+     closed on small screens so the page is quicker to scan. Desktop
+     layouts are untouched.
+     ========================================================= */
+  const phone = window.matchMedia("(max-width: 639px)");
+  function setCollapsed(panel, closed) {
+    panel.classList.toggle("is-collapsed", closed);
+    const btn = $(".collapse-btn", panel);
+    if (btn) {
+      btn.setAttribute("aria-expanded", String(!closed));
+      $(".collapse-label", btn).textContent = closed ? "Show" : "Hide";
+    }
+  }
+  $$(".panel[data-collapsible]").forEach((panel) => {
+    const head = $(".panel-head", panel);
+    if (!head) return;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "collapse-btn";
+    btn.innerHTML = `<span class="collapse-label">Hide</span>${svg("chevron-right")}`;
+    head.appendChild(btn);
+    head.classList.add("is-toggle");
+    head.addEventListener("click", (e) => {
+      if (!phone.matches || e.target.closest("a, select, input, button:not(.collapse-btn)")) return;
+      setCollapsed(panel, !panel.classList.contains("is-collapsed"));
+    });
+    setCollapsed(panel, phone.matches);
+  });
+  VH.expandPanel = (panel) => { if (panel && panel.classList.contains("is-collapsed")) setCollapsed(panel, false); };
+
+  /* =========================================================
+     Deep links: a link ending in #section-id (from an alert, search or
+     another page) scrolls to that exact spot, opens anything it's tucked
+     inside, and highlights it. Pages can claim special targets, like
+     the schedule's #day-2026-11-17, through the vh:focus event.
+     ========================================================= */
+  function focusHash() {
+    const id = decodeURIComponent(location.hash.slice(1));
+    if (!id) return;
+    const claimed = !document.dispatchEvent(new CustomEvent("vh:focus", { detail: { id }, cancelable: true }));
+    if (claimed) return;
+    const el = document.getElementById(id);
+    if (!el || el.matches("dialog, script")) return;
+    VH.expandPanel(el.closest(".panel[data-collapsible]"));
+    const details = el.closest("details");
+    if (details) details.open = true;
+    VH.flashTo(el.matches("li, .panel, section") ? el : el.closest("li, .panel") || el);
+    if (el.matches("form")) { const f = $("input, select, textarea", el); if (f) setTimeout(() => f.focus({ preventScroll: true }), 500); }
+  }
+  VH.flashTo = (box) => {
+    box.scrollIntoView({ block: box.offsetHeight > window.innerHeight * 0.6 ? "start" : "center", behavior: "smooth" });
+    box.classList.remove("is-flash");
+    void box.offsetWidth;
+    box.classList.add("is-flash");
+    setTimeout(() => box.classList.remove("is-flash"), 2400);
+  };
+  // After the page's own scripts have drawn their lists
+  window.addEventListener("load", () => setTimeout(focusHash, 80));
+  window.addEventListener("hashchange", focusHash);
+  // A link to a spot on the same page should still jump there when the hash hasn't changed
+  document.addEventListener("click", (e) => {
+    const a = e.target.closest("a[href*='#']");
+    if (!a || a.target === "_blank") return;
+    const url = new URL(a.href, location.href);
+    if (url.pathname === location.pathname && url.search === location.search && url.hash && url.hash === location.hash) {
+      e.preventDefault();
+      focusHash();
+    }
+  });
 
   /* =========================================================
      Live moments: some pages get a new alert a few seconds after they open

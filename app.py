@@ -9,7 +9,7 @@ from flask import Flask, render_template, request, session
 from alerts import active_alerts
 from config import Config
 from db import close_db, init_db, query_one
-from formatting import money, nice_date
+from formatting import money, nice_date, slug
 from security import BOOT_ID, check_csrf, csrf_token
 
 from navigation import GETTING_AROUND, RESOURCES_LINK, SERVICES
@@ -67,6 +67,7 @@ def create_app():
     app.jinja_env.globals["place_name"] = place_name
     app.jinja_env.filters["money"] = money
     app.jinja_env.filters["nice_date"] = nice_date
+    app.jinja_env.filters["slug"] = slug
 
     @app.context_processor
     def inject_globals():

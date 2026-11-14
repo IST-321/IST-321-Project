@@ -262,8 +262,70 @@
     const openFrom = (el) => { clearHighlight(); startChat(stopById[el.dataset.stop]); };
     page.addEventListener("click", (e) => {
       const el = e.target.closest("[data-stop]");
-      if (el) openFrom(el);
+      if (el && !mapMoved) openFrom(el);
     });
+
+    /* Phones: pinch or use the buttons to zoom, drag to move, and open the map full screen.
+       On a computer the map stays as it is. */
+    let mapMoved = false;
+    const escSvg = fig && $("svg", fig);
+    if (escSvg && window.VHMap) {
+      const vb = escSvg.viewBox.baseVal;
+      const FULL = { x: vb.x, y: vb.y, w: vb.width, h: vb.height };
+      let box = { ...FULL };
+      const apply = () => {
+        escSvg.setAttribute("viewBox", `${box.x} ${box.y} ${box.w} ${box.h}`);
+        fig.classList.toggle("is-zoomed", box.w < FULL.w - 1);
+      };
+      const clamp = () => {
+        box.w = Math.min(FULL.w, Math.max(FULL.w / 6, box.w));
+        box.h = box.w * FULL.h / FULL.w;
+        box.x = Math.min(FULL.x + FULL.w - box.w, Math.max(FULL.x, box.x));
+        box.y = Math.min(FULL.y + FULL.h - box.h, Math.max(FULL.y, box.y));
+      };
+      const zoomAt = (f, cx = box.x + box.w / 2, cy = box.y + box.h / 2) => {
+        const nw = box.w * f;
+        box.x = cx - (cx - box.x) * (nw / box.w);
+        box.y = cy - (cy - box.y) * (nw / box.w);
+        box.w = nw;
+        clamp(); apply();
+      };
+      const panBy = (dx, dy) => {
+        const scale = escSvg.getScreenCTM().a || 1;
+        box.x -= dx / scale; box.y -= dy / scale;
+        clamp(); apply();
+      };
+      VHMap.pinchZoom(escSvg, { zoomAt, panBy, onPinch: (on) => { if (on) mapMoved = true; else setTimeout(() => { mapMoved = false; }, 50); } });
+      // One finger drags once zoomed in
+      let start = null, lastPt = null;
+      escSvg.addEventListener("pointerdown", (e) => { start = lastPt = { x: e.clientX, y: e.clientY }; mapMoved = false; });
+      escSvg.addEventListener("pointermove", (e) => {
+        if (!start || box.w >= FULL.w - 1) return;
+        if (!mapMoved && Math.hypot(e.clientX - start.x, e.clientY - start.y) < 6) return;
+        mapMoved = true;
+        panBy(e.clientX - lastPt.x, e.clientY - lastPt.y);
+        lastPt = { x: e.clientX, y: e.clientY };
+      });
+      const up = () => { start = null; setTimeout(() => { mapMoved = false; }, 50); };
+      escSvg.addEventListener("pointerup", up);
+      escSvg.addEventListener("pointercancel", up);
+      // Ctrl (or Cmd) and the mouse wheel zoom in and out, the same as the campus map
+      escSvg.addEventListener("wheel", (e) => {
+        if (!e.ctrlKey && !e.metaKey && !fig.classList.contains("is-expanded")) return;  // plain scrolling still scrolls the page
+        e.preventDefault();
+        const pt = escSvg.createSVGPoint();
+        pt.x = e.clientX; pt.y = e.clientY;
+        const p = pt.matrixTransform(escSvg.getScreenCTM().inverse());
+        zoomAt(e.deltaY > 0 ? 1.15 : 0.87, p.x, p.y);
+      }, { passive: false });
+      $$("[data-esc-zoom]", fig).forEach((b) => b.addEventListener("click", () => {
+        if (b.dataset.escZoom === "in") zoomAt(0.7);
+        else if (b.dataset.escZoom === "out") zoomAt(1 / 0.7);
+        else { box = { ...FULL }; apply(); }
+      }));
+      const expandBtn = $("[data-esc-expand]", fig);
+      if (expandBtn) VHMap.expander(fig, expandBtn);
+    }
     page.addEventListener("keydown", (e) => {
       const el = e.target.closest(".esc-stop");
       if (el && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openFrom(el); }

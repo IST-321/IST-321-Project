@@ -69,12 +69,12 @@
 
       <div class="low-alert-row">
         <div class="low-alert-text">
-          <label class="field-label" for="low-alert">Low balance alert</label>
-          <p class="muted small">When a purchase drops your balance below this amount, you'll get an alert with quick ways to add funds or lock your card.</p>
+          <label class="field-label" for="low-alert">Low balance warning</label>
+          <p class="muted small">Warn me when my balance will last less than this, at my usual pace. You'll get one alert with quick ways to add funds or lock your card, and the forecast above turns amber.</p>
         </div>
         <select class="text-input" id="low-alert" data-low-alert>
-          {% for c in low_choices %}
-            <option value="{{ c }}" {% if c == card.low_alert_cents %}selected{% endif %}>{{ c|money if c else 'Off' }}</option>
+          {% for days, label in low_choices %}
+            <option value="{{ days }}" {% if days == card.low_alert_days %}selected{% endif %}>{{ label }}</option>
           {% endfor %}
         </select>
       </div>
@@ -82,7 +82,7 @@
   </section>
 
   {# ---------- Spending by place ---------- #}
-  <section class="panel" aria-labelledby="spend-title">
+  <section class="panel" id="spending" aria-labelledby="spend-title" data-collapsible>
     <header class="panel-head">
       <h3 id="spend-title">Spending by place</h3>
       <span class="muted small" data-spend-total></span>
@@ -94,7 +94,7 @@
   </section>
 
   {# ---------- 3. Recent activity ---------- #}
-  <section class="panel no-clip" aria-labelledby="activity-title">
+  <section class="panel no-clip" id="activity" aria-labelledby="activity-title">
     <header class="panel-head">
       <h3 id="activity-title">Recent activity</h3>
       <button class="text-btn" type="button" data-txn-close hidden>Show fewer</button>
@@ -128,7 +128,7 @@
   {# ---------- 4. Meal plan and card services, side by side ---------- #}
   <div class="vc-pair">
     {% if meal %}
-    <section class="panel" aria-labelledby="meal-title">
+    <section class="panel" id="meal-plan" aria-labelledby="meal-title">
       <header class="panel-head">
         <h3 id="meal-title">Meal plan</h3>
         <span class="muted small">{{ meal.term }}</span>
@@ -150,7 +150,7 @@
     </section>
     {% endif %}
 
-    <section class="panel" aria-labelledby="services-title">
+    <section class="panel" id="card-services" aria-labelledby="services-title" data-collapsible>
       <header class="panel-head"><h3 id="services-title">Card services</h3></header>
       <ul class="row-list compact">
         <li><button class="row-link" type="button" data-replace-open>

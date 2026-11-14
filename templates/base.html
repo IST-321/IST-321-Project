@@ -185,6 +185,11 @@
     <form method="dialog">
       <h2 id="confirm-title" data-confirm-title></h2>
       <p class="dialog-body" data-confirm-body></p>
+      <ul class="confirm-list" data-confirm-list hidden></ul>
+      <label class="confirm-type" data-confirm-type-wrap hidden>
+        <span>Type <strong data-confirm-type-word></strong> to confirm</span>
+        <input class="text-input" type="text" autocomplete="off" spellcheck="false" data-confirm-type>
+      </label>
       <div class="dialog-actions">
         <button class="btn btn-ghost" value="cancel">Cancel</button>
         <button class="btn btn-primary" value="ok" data-confirm-ok>Confirm</button>
@@ -197,6 +202,7 @@
     <div class="tap-backdrop" data-tap-close></div>
     <form class="tap-caption tap-sheet" data-tap-sheet novalidate>
       <p class="tap-ready">{{ icon('check-circle') }} Ready to tap. Choose where you're paying.</p>
+      <p class="tap-balance">Balance <strong data-balance data-tap-balance></strong></p>
       <div class="tap-fields">
         <label class="visually-hidden" for="tap-register">Where you're paying</label>
         <select class="text-input" id="tap-register" data-tap-register>

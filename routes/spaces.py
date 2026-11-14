@@ -254,7 +254,7 @@ def book_room():
         (sid, room["id"], unit, day, start, end, details, ev.lastrowid, project_now().isoformat(timespec="minutes")))
     add_alert(sid, "campus", "Library room reserved",
               f"{label}, {day_label(date.fromisoformat(day))} from {_fmt(start)} to {_fmt(end)}. Bring your Viking Card to the Library Help Desk.",
-              "calendar", "spaces.index")
+              "calendar", "spaces.index#my-reservations")
     db.commit()
     return jsonify(state=rooms_state(sid), message=f"{label} reserved")
 

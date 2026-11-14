@@ -45,7 +45,7 @@
 
   {# ---------- Deadlines and classes ---------- #}
   <div class="sch-pair">
-    <section class="panel" aria-labelledby="dl-title">
+    <section class="panel" id="deadlines" aria-labelledby="dl-title" data-collapsible>
       <header class="panel-head">
         <h3 id="dl-title">Assignment deadlines</h3>
         <button class="text-btn" type="button" data-add="assignment">Add assignment</button>
@@ -53,7 +53,7 @@
       <ul class="deadline-list" data-deadlines></ul>
     </section>
 
-    <section class="panel" aria-labelledby="cl-title">
+    <section class="panel" id="classes" aria-labelledby="cl-title" data-collapsible>
       <header class="panel-head">
         <h3 id="cl-title">My classes · {{ data.term.name }}</h3>
         <button class="text-btn" type="button" data-add="class">Add class</button>
@@ -64,7 +64,7 @@
 
   {# ---------- Calendar files (Blackboard import beside .ics export), then course tools across the bottom ---------- #}
   <div class="sch-stack">
-    <section class="panel" id="calendar-files" aria-labelledby="cal-title">
+    <section class="panel" id="calendar-files" aria-labelledby="cal-title" data-collapsible>
       <header class="panel-head"><h3 id="cal-title">Calendar files</h3></header>
       <div class="panel-pad cal-files">
         <div class="cal-part">
@@ -100,7 +100,7 @@
       </div>
     </section>
 
-    <section class="panel course-tools" aria-labelledby="ql-title">
+    <section class="panel course-tools" aria-labelledby="ql-title" data-collapsible>
       <header class="panel-head"><h3 id="ql-title">Course tools</h3></header>
       <ul class="row-list compact tools-row">
         {% for l in links %}

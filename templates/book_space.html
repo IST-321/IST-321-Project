@@ -57,13 +57,13 @@
     </div>
 
     <div>
-      <section class="panel" aria-labelledby="my-rooms">
+      <section class="panel" id="my-reservations" aria-labelledby="my-rooms">
         <header class="panel-head"><h3 id="my-rooms">My reservations</h3></header>
         <ul class="loan-list" data-room-mine></ul>
         <p class="muted small panel-pad">Up to {{ max_rooms }} at a time.</p>
       </section>
 
-      <section class="panel" aria-labelledby="walkin-title">
+      <section class="panel" aria-labelledby="walkin-title" data-collapsible>
         <header class="panel-head"><h3 id="walkin-title">No reservation needed</h3></header>
         <ul class="walkin-list">
           {% for w in walk_in %}
@@ -72,7 +72,7 @@
         </ul>
       </section>
 
-      <section class="panel" aria-labelledby="lib-info">
+      <section class="panel" aria-labelledby="lib-info" data-collapsible>
         <header class="panel-head"><h3 id="lib-info">Library hours</h3></header>
         <div class="panel-pad info-card">
           {% for h in library.hours_text %}<p>{{ h }}</p>{% endfor %}
@@ -106,7 +106,7 @@
     </div>
 
     <div>
-      <section class="panel" aria-labelledby="rec-info">
+      <section class="panel" aria-labelledby="rec-info" data-collapsible>
         <header class="panel-head"><h3 id="rec-info">Recreation Center</h3></header>
         <div class="panel-pad info-card">
           <p>{{ icon('pin') }} {{ rec.where }}</p>

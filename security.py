@@ -30,7 +30,7 @@ def login_required(view):
             session.pop("student_id", None)
             if request.path.startswith("/api/"):
                 abort(401)
-            return redirect(url_for("auth.login", next=request.path))
+            return redirect(url_for("auth.login"))
         return view(*args, **kwargs)
 
     return wrapped

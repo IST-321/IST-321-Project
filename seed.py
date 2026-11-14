@@ -96,6 +96,28 @@ def _at(day, hour, minute):
     return datetime(day.year, day.month, day.day, hour, minute).isoformat(timespec="minutes")
 
 
+# A few recent purchases happened at other campus places. Only the place names change,
+# so every amount, the balance and the totals stay the same.
+EXTRA_PLACES = {  # (place, which recent purchase there) -> new place
+    ("Chick-fil-A, Student Center", 2): "Viking Outfitters Campus Store",
+    ("Chick-fil-A, Student Center", 4): "Hissho Sushi",
+    ("Viking Express", 1): "Campus printing",
+    ("Starbucks, Student Center", 3): "Market on Euclid",
+}
+
+
+def _spread_places(rows):
+    since = (PROJECT_DAY - timedelta(days=30)).isoformat()
+    seen = {}
+    out = []
+    for at, loc, kind, amount, balance in rows:
+        if kind == "Purchase" and at >= since:
+            seen[loc] = seen.get(loc, 0) + 1
+            loc = EXTRA_PLACES.get((loc, seen[loc]), loc)
+        out.append((at, loc, kind, amount, balance))
+    return out
+
+
 def _seed_card(db, sid):
     rng = random.Random(321)
     rows = []
@@ -144,6 +166,7 @@ def _seed_card(db, sid):
             rows.append((when, loc, kind, cents, balance))
         day += timedelta(days=1)
 
+    rows = _spread_places(rows)
     db.executemany(
         """INSERT INTO card_transactions (student_id, occurred_at, location, txn_type, amount_cents, balance_after_cents)
            VALUES (?, ?, ?, ?, ?, ?)""",
@@ -166,22 +189,22 @@ def _seed_alerts(db, sid):
     alerts = [
         ("transportation", "Thanksgiving break parking",
          "Campus is closed November 26 and 27. Check garage hours before you travel.",
-         "bus", "transportation.parking", "2026-11-12T07:30"),
+         "bus", "transportation.parking#parking", "2026-11-12T07:30"),
         ("schedule", "Class canceled",
          "HIS 211 will not meet on Friday, November 13. Watch Blackboard for updates from Prof. Jadav.",
-         "calendar", "schedule.index", "2026-11-11T16:05"),
+         "calendar", "schedule.index#day-2026-11-13", "2026-11-11T16:05"),
         ("card", "Viking Card balance updated",
          "A $40.00 deposit was added to your Viking Card.",
-         "card", "viking_card.index", "2026-11-10T07:40"),
+         "card", "viking_card.index#activity", "2026-11-10T07:40"),
         ("deadline", "Upcoming assignment deadline",
          "ENG 102: Rhetorical Strategy Handout is due Wednesday, November 25 at 9:00 AM.",
-         "clock", "schedule.index", "2026-11-09T09:00"),
+         "clock", "schedule.index#deadlines", "2026-11-09T09:00"),
         ("campus", "New campus announcement",
          "VikesGiving dinner is at Viking Marketplace on Thursday, November 19.",
-         "megaphone", "dashboard.announcements_page", "2026-11-06T10:15"),
+         "megaphone", "dashboard.announcements_page#ann-vikesgiving-at-viking-marketplace", "2026-11-06T10:15"),
         ("orientation", "Orientation task completed",
          "Complete Viking Voyage is marked complete on your orientation checklist.",
-         "flag", "orientation.index", "2026-11-03T14:20"),
+         "flag", "orientation.index#task-complete-viking-voyage", "2026-11-03T14:20"),
     ]
     # The two newest arrived since Magnus last opened the app, so they start out new
     db.executemany(
@@ -193,22 +216,22 @@ def _seed_alerts(db, sid):
 LIVE_MOMENTS = [  # page, seconds after it opens, category, title, body, icon, link, effect
     ("dashboard.index", 4, "schedule", "Advising appointment confirmed",
      "Your meeting with your academic advisor is Tuesday, November 17 at 11:00 AM in Berkman Hall. It's on your schedule.",
-     "calendar", "schedule.index", "advising"),
+     "calendar", "schedule.index#day-2026-11-17", "advising"),
     ("schedule.index", 8, "schedule", "Class canceled: MTH 116 today",
      "Prof. Moore canceled today's 2:00 PM class. Watch Blackboard for a make-up assignment.",
-     "calendar", "schedule.index", "cancel_mth"),
+     "calendar", "schedule.index#day-2026-11-12", "cancel_mth"),
     ("viking_card.index", 6, "card", "Viking Card deposit received",
      "A $25.00 deposit from the Online Card Office was added to your Viking Card.",
-     "card", "viking_card.index", "deposit"),
+     "card", "viking_card.index#activity", "deposit"),
     ("transportation.parking", 6, "transportation", "East Garage closing early tonight",
      "East Garage closes at 9 PM tonight for a Wolstein Center event. Park in South Garage or Central Garage instead.",
-     "bus", "transportation.parking", None),
+     "bus", "transportation.parking#garage-EG", None),
     ("dashboard.announcements_page", 4, "campus", "Spring 2027 registration opens soon",
      "Check your enrollment date in CampusNet and plan your spring classes with your advisor.",
-     "megaphone", "dashboard.announcements_page", None),
+     "megaphone", "dashboard.announcements_page#ann-spring-2027-registration", None),
     ("orientation.index", 5, "orientation", "One orientation step left",
      "Join a student organization to finish orientation. Browse clubs in Events and VikesConnect, then mark the step complete.",
-     "flag", "orientation.index", None),
+     "flag", "orientation.index#task-join-a-student-organization", None),
 ]
 
 

@@ -68,7 +68,7 @@
   </section>
 
   <div class="tr-two">
-    <section class="panel" aria-labelledby="ann-title">
+    <section class="panel" aria-labelledby="ann-title" data-collapsible>
       <header class="panel-head"><h3 id="ann-title">University announcements</h3><a class="link small" href="{{ url_for('dashboard.announcements_page') }}">All announcements</a></header>
       <ul class="notice-list">
         {% for a in announcements %}
@@ -76,7 +76,7 @@
         {% endfor %}
       </ul>
     </section>
-    <section class="panel" aria-labelledby="cce-title">
+    <section class="panel" aria-labelledby="cce-title" data-collapsible>
       <header class="panel-head"><h3 id="cce-title">{{ engagement.name }}</h3></header>
       <div class="panel-pad">
         <p class="muted">Questions about joining or starting an organization? The Center for Campus Engagement supports every recognized student organization. To start your own, you need three friends and a faculty or staff advisor.</p>

@@ -126,7 +126,7 @@ def add_request():
         db.execute("UPDATE equipment SET seven_day = seven_day - 1 WHERE id = ?", (item["id"],))
     add_alert(sid, "campus", "Mobile Campus request saved",
               f"Pick up your {item['name']} in Student Center 128A on {nice_date(pickup, '%A, %B %d')}. Bring your Viking Card.",
-              "laptop", "mobile_campus.index")
+              "laptop", "mobile_campus.index#my-requests")
     db.commit()
     return jsonify(_state(sid))
 

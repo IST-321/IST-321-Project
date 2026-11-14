@@ -83,7 +83,7 @@
   /* ---------- Popup ---------- */
   function placePopup() {
     if (pop.hidden || !popAt) return;
-    if (window.matchMedia("(max-width: 639px)").matches && !document.fullscreenElement) {
+    if (window.matchMedia("(max-width: 639px)").matches && !document.fullscreenElement && !mapPanel.classList.contains("is-expanded")) {
       pop.classList.add("is-sheet");
       pop.style.transform = "";
       return;
@@ -274,6 +274,7 @@
   /* ---------- Map clicks and hover ---------- */
   let downAt = null;
   svg.addEventListener("click", (e) => {
+    if (pinching) return;  // the end of a pinch, not a tap
     if (downAt && Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > 6) return;  // it was a drag
     if (dropMode) {
       const [x, y] = toMap(e);
@@ -451,12 +452,26 @@
       page.classList.add("is-dragging");
       tip.hidden = true;
     }
-    if (!dragging) return;
-    const r = svg.getBoundingClientRect();
-    box.x -= (e.clientX - last.x) / r.width * box.w;
-    box.y -= (e.clientY - last.y) / r.height * box.h;
+    if (!dragging || pinching) return;
+    panBy(e.clientX - last.x, e.clientY - last.y);
     last = { x: e.clientX, y: e.clientY };
+  });
+  function panBy(dx, dy) {
+    const scale = svg.getScreenCTM().a || 1;   // screen pixels per map unit
+    box.x -= dx / scale;
+    box.y -= dy / scale;
     clamp(); apply();
+  }
+
+  // Phones: pinch with two fingers to zoom
+  let pinching = false;
+  VHMap.pinchZoom(svg, {
+    zoomAt: (f, x, y) => zoom(f, x, y),
+    panBy,
+    onPinch: (on) => {
+      pinching = on;
+      if (on) { dragging = false; pressed = null; page.classList.remove("is-dragging"); tip.hidden = true; }
+    },
   });
   const endDrag = () => { dragging = false; pressed = null; page.classList.remove("is-dragging"); };
   svg.addEventListener("pointerup", endDrag);
@@ -464,12 +479,14 @@
 
   const fsBtn = $("[data-fullscreen]", page);
   const mapPanel = $(".map-panel", page);
+  // Phones: the full screen button opens the map over the whole app instead (sideways where allowed)
+  const expanded = VHMap.expander(mapPanel, fsBtn, { onChange: () => setTimeout(placePopup, 80) });
   fsBtn.addEventListener("click", () => {
     if (document.fullscreenElement) document.exitFullscreen();
     else if (mapPanel.requestFullscreen) mapPanel.requestFullscreen();
   });
   document.addEventListener("fullscreenchange", () => {
-    $("span", fsBtn).textContent = document.fullscreenElement ? "Exit full screen" : "Full screen";
+    if (!expanded.isOpen()) $("span", fsBtn).textContent = document.fullscreenElement ? "Exit full screen" : "Full screen";
     setTimeout(placePopup, 60);
   });
   window.addEventListener("resize", placePopup);

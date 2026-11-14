@@ -161,7 +161,8 @@ def set_status(task_id):
         summary = progress_summary(sid)
         body = (f"{task['title']} is marked complete. You're {summary['percent']}% of the way through orientation."
                 if summary["percent"] < 100 else "Every orientation step is complete. Welcome aboard, Viking!")
-        link = "orientation.index" if summary["percent"] < 100 else "orientation.resources_page"
+        from formatting import slug
+        link = f"orientation.index#task-{slug(task['title'])}" if summary["percent"] < 100 else "orientation.resources_page"
         add_alert(sid, "orientation", "Orientation task completed", body, "flag", link)
     db.commit()
     return jsonify(progress=progress_summary(sid), status=status)

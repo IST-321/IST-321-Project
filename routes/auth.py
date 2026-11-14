@@ -11,13 +11,6 @@ from security import BOOT_ID, valid_student_id
 bp = Blueprint("auth", __name__)
 
 
-def _safe_next(target):
-    """Only allow redirects to pages inside this site."""
-    if target and target.startswith("/") and not target.startswith("//"):
-        return target
-    return url_for("dashboard.index")
-
-
 @bp.route("/")
 def root():
     # The site always opens to sign in.
@@ -75,7 +68,8 @@ def login():
                 )
                 db.commit()
 
-                response = make_response(redirect(_safe_next(request.args.get("next"))))
+                # Every sign in starts on Home, whichever page the student was on before
+                response = make_response(redirect(url_for("dashboard.index")))
                 if remember:
                     response.set_cookie(
                         cookie_name, f"{student_id}:{BOOT_ID}",

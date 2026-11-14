@@ -171,6 +171,6 @@ def apply(slug):
                (sid, slug, json.dumps(answers), project_now().isoformat(timespec="minutes")))
     add_alert(sid, "campus", "Application submitted",
               f"Your application to {club['name']} is complete. Officers usually reply through VikesConnect within a week.",
-              "check-circle", "events.index")
+              "check-circle", f"events.index#club-{slug}")
     db.commit()
     return jsonify(applied=_applications(sid))

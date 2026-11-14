@@ -176,6 +176,28 @@ def add_class():
     return jsonify(data=schedule_data(sid), message=f"{fields[0]} added")
 
 
+@bp.route("/api/schedule/classes/<int:item_id>/impact")
+@login_required
+def class_impact(item_id):
+    """What deleting a class would also delete, in plain words."""
+    sid = session["student_id"]
+    row = _owned("courses", item_id, sid)
+    code = row["code"]
+    n_assign = query_one("SELECT COUNT(*) AS n FROM assignments WHERE student_id = ? AND course_code = ?", (sid, code))["n"]
+    cats = query_all("SELECT id FROM grade_categories WHERE student_id = ? AND course_code = ?", (sid, code))
+    n_scores = sum(query_one("SELECT COUNT(*) AS n FROM grade_items WHERE category_id = ? AND earned IS NOT NULL", (c["id"],))["n"]
+                   for c in cats)
+    n_cancel = query_one("SELECT COUNT(*) AS n FROM class_cancellations WHERE course_id = ?", (item_id,))["n"]
+    plural = lambda n, word: f"{n} {word}{'' if n == 1 else 's'}"
+    items = [f"The class and its meeting times on your planner",
+             f"{plural(n_assign, 'assignment')} and due date{'' if n_assign == 1 else 's'}" if n_assign else "No assignments",
+             f"Its grade tracker: {plural(len(cats), 'section')} and {plural(n_scores, 'score')}" if cats else "No grade tracker",
+             ]
+    if n_cancel:
+        items.append(plural(n_cancel, "canceled class day"))
+    return jsonify(items=items)
+
+
 def _unique_code(sid, code, ignore_id=None):
     if query_one("SELECT 1 FROM courses WHERE student_id = ? AND lower(code) = lower(?) AND id != ?", (sid, code, ignore_id or -1)):
         _bad(f"{code} is already on your schedule.")
@@ -188,9 +210,17 @@ def change_class(item_id):
     row = _owned("courses", item_id, sid)
     db = get_db()
     if request.method == "DELETE":
+        # A deleted class takes its assignments, grade tracker and canceled days with it
+        code = row["code"]
+        db.execute("DELETE FROM assignments WHERE student_id = ? AND course_code = ?", (sid, code))
+        for r in query_all("SELECT id FROM grade_categories WHERE student_id = ? AND course_code = ?", (sid, code)):
+            db.execute("DELETE FROM grade_items WHERE category_id = ?", (r["id"],))
+        db.execute("DELETE FROM grade_categories WHERE student_id = ? AND course_code = ?", (sid, code))
+        db.execute("DELETE FROM grade_courses WHERE student_id = ? AND course_code = ?", (sid, code))
+        db.execute("DELETE FROM class_cancellations WHERE course_id = ?", (item_id,))
         db.execute("DELETE FROM courses WHERE id = ?", (item_id,))
         db.commit()
-        return jsonify(data=schedule_data(sid), message=f"{row['code']} removed from your schedule")
+        return jsonify(data=schedule_data(sid), message=f"{code} and its information were deleted")
     fields = _class_fields(request.get_json(silent=True) or {})
     _unique_code(sid, fields[0], item_id)
     db.execute(

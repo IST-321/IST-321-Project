@@ -1623,3 +1623,64 @@ html.text-large .appbar, html.text-larger .appbar { font-size: 16px; }
 .live-close .icon { width: 14px; height: 14px; }
 @keyframes live-in { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
 @media (max-width: 639px) { .live-region { right: 12px; left: 12px; width: auto; } }
+
+/* Phone-only collapsible panels */
+.collapse-btn { display: none; }
+@media (max-width: 639px) {
+  .panel-head.is-toggle { cursor: pointer; }
+  .collapse-btn { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; padding: 4px 6px; border: 0; background: none;
+    color: var(--green); font: inherit; font-size: .84rem; font-weight: 600; cursor: pointer; flex-shrink: 0; }
+  .collapse-btn .icon { width: 14px; height: 14px; transform: rotate(90deg); transition: transform .2s; }
+  .panel.is-collapsed .collapse-btn .icon { transform: rotate(0deg); }
+  .panel.is-collapsed > :not(.panel-head) { display: none !important; }
+  .panel.is-collapsed > .panel-head { border-bottom: 0; }
+}
+[id] { scroll-margin-top: calc(var(--appbar-h) + 16px); }
+.tap-balance { margin: -4px 0 0; text-align: center; color: rgba(255, 255, 255, .9); font-size: .92rem; text-shadow: 0 1px 3px rgba(0, 0, 0, .4); }
+.tap-balance strong { color: #fff; font-size: 1.05rem; margin-left: 4px; }
+.confirm-list { margin: 4px 0 12px; padding-left: 20px; display: grid; gap: 4px; font-size: .92rem; }
+.confirm-type { display: grid; gap: 6px; margin: 4px 0 14px; font-size: .92rem; }
+.dialog-actions .btn:disabled { opacity: .5; cursor: not-allowed; }
+/* Phones: keep the sign-in card (and its "Welcome" title) above the green header it overlaps */
+.auth-main { position: relative; z-index: 1; }
+
+/* ---------- Phone maps: full screen over the app, pinch to zoom ---------- */
+.map-turn-hint, .esc-phone-tools, .esc-zoom { display: none; }
+@media (max-width: 639px) {
+  .map-stage, .escort-map > svg { touch-action: pan-y; }
+  .escort-map.is-zoomed > svg { touch-action: none; }
+  .esc-phone-tools { display: block; position: absolute; top: 8px; right: 8px; z-index: 3; }
+  .esc-phone-tools .btn { background: var(--surface); box-shadow: var(--shadow); }
+  .esc-zoom { display: flex; }
+}
+html.map-expanded, html.map-expanded body { overflow: hidden; }
+.map-panel.is-expanded, .escort-map.is-expanded {
+  position: fixed; inset: 0; z-index: 120; margin: 0; border: 0; border-radius: 0; background: #fff;
+  display: flex; flex-direction: column;
+}
+.map-panel.is-expanded .map-foot, .map-panel.is-expanded .map-find { display: none; }
+.map-panel.is-expanded .map-toolbar { justify-content: flex-end; padding: 8px 10px; }
+.map-panel.is-expanded .map-stage { flex: 1; display: flex; align-items: center; touch-action: none; }
+.map-panel.is-expanded .cmap, .escort-map.is-expanded > svg { width: 100%; height: 100%; max-height: none; touch-action: none; }
+.escort-map.is-expanded figcaption { display: none; }
+.escort-map.is-expanded > svg { flex: 1; min-height: 0; }
+.map-panel.is-expanded .map-pop.is-sheet { position: absolute; }
+@media (orientation: portrait) {
+  .map-panel.is-expanded .map-turn-hint, .escort-map.is-expanded .map-turn-hint {
+    display: flex; align-items: center; gap: 6px; position: absolute; left: 50%; top: 10px; transform: translateX(-50%); z-index: 4;
+    margin: 0; padding: 6px 12px; border-radius: 8px; background: rgba(20, 41, 31, .82); color: #fff; font-size: .8rem; white-space: nowrap;
+  }
+  .escort-map.is-expanded .map-turn-hint { top: auto; bottom: 12px; }
+  .map-turn-hint .icon { width: 14px; height: 14px; }
+}
+.escort-map.is-expanded .esc-phone-tools { display: block; position: absolute; top: 8px; right: 8px; z-index: 3; }
+.escort-map.is-expanded .esc-phone-tools .btn { background: var(--surface); box-shadow: var(--shadow); }
+.escort-map.is-expanded .esc-zoom { display: flex; }
+@media (pointer: coarse) and (max-width: 950px) {
+  .esc-phone-tools { display: block; position: absolute; top: 8px; right: 8px; z-index: 3; }
+  .esc-phone-tools .btn { background: var(--surface); box-shadow: var(--shadow); }
+  .esc-zoom { display: flex; }
+}
+/* Computers: once the escort map is zoomed, show the zoom buttons so it's easy to zoom back out */
+.escort-map.is-zoomed .esc-zoom { display: flex; }
+.escort-map.is-zoomed > svg { cursor: grab; }

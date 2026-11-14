@@ -262,6 +262,17 @@
   $$("[data-sch-view]").forEach((b) => b.addEventListener("click", () => { view = b.dataset.schView; render(); }));
   $("[data-sch-make-day]").addEventListener("click", () => VH.setAppDate(iso(cursor)));
 
+  // Links like #day-2026-11-17 open the planner's day view on that date
+  document.addEventListener("vh:focus", (e) => {
+    const m = /^day-(\d{4}-\d{2}-\d{2})$/.exec(e.detail.id);
+    if (!m) return;
+    e.preventDefault();
+    cursor = VH.parseDate(m[1]);
+    view = "day";
+    render();
+    VH.flashTo($(".sch-cal"));
+  });
+
   // A live moment (like a class canceled) can change the schedule while it's open
   document.addEventListener("vh:schedule-changed", async () => {
     try { data = (await VH.api("/api/schedule/data")).data; render(); } catch (_) { /* keep what's shown */ }
@@ -469,9 +480,18 @@
       else if (d.deleteClass) {
         const c = data.classes.find((x) => x.id === Number(d.deleteClass));
         if (dlg.open) close();
-        if (await VH.confirm({ title: `Delete ${c.code}?`, body: "It will be removed from your planner. This doesn't drop the class in CampusNet.", confirmLabel: "Delete class", danger: true })) {
-          await send(`/api/schedule/classes/${c.id}`, "DELETE");
-        }
+        // Two steps: first show everything that goes with the class, then type its code to confirm
+        const impact = await VH.api(`/api/schedule/classes/${c.id}/impact`);
+        const step1 = await VH.confirm({
+          title: `Delete ${c.code}?`,
+          body: `Deleting ${c.code} also deletes everything tied to it in Viking Hub:`,
+          list: impact.items, confirmLabel: "Continue", danger: true });
+        if (!step1) return;
+        const step2 = await VH.confirm({
+          title: `Delete ${c.code} and its information?`,
+          body: "This can't be undone. It only changes Viking Hub; it doesn't drop the class in CampusNet.",
+          typeToConfirm: c.code, confirmLabel: "Delete class", danger: true });
+        if (step2) await send(`/api/schedule/classes/${c.id}`, "DELETE");
       }
       else if (d.deleteAssignment) {
         close();

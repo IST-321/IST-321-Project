@@ -1,4 +1,5 @@
 """Formatting helpers used by templates and API responses."""
+import re
 from datetime import datetime
 
 
@@ -17,3 +18,8 @@ def nice_date(value, fmt="%b %d, %Y"):
     hour12 = dt.hour % 12 or 12
     out = dt.strftime(fmt.replace("%d", "{D}").replace("%I", "{H}"))
     return out.replace("{D}", str(dt.day)).replace("{H}", str(hour12))
+
+
+def slug(text):
+    """A short id for links to a spot on a page, e.g. 'Join a student organization' -> 'join-a-student-organization'."""
+    return re.sub(r"[^a-z0-9]+", "-", str(text or "").lower()).strip("-")

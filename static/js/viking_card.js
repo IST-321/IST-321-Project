@@ -14,16 +14,18 @@
   function renderForecast() {
     const m = insights.money, sw = insights.swipes;
     const lines = [];
-    if (m.pace > 0 && m.short) {
+    const oneTime = m.one_time && m.one_time.length
+      ? ` Not counting ${m.one_time.map((o) => `a one-time ${esc(o.label)} purchase at ${esc(o.place)}`).join(" and ")}, since it isn't part of your usual spending.` : "";
+    if (m.short) {
       lines.push(`<p class="fc-line is-short">${VH.svg("alert")}<span>
-        <strong>Your balance is running low.</strong> At about ${esc(m.pace_label)} a day it lasts until <strong>${esc(m.runs_out)}</strong>.
-        Adding about <strong>${esc(m.need_label)}</strong> carries you to the end of the semester.</span></p>`);
+        <strong>Your balance is running low.</strong> ${m.pace > 0 && m.runs_out ? `At about ${esc(m.pace_label)} a day it lasts until <strong>${esc(m.runs_out)}</strong>.` : ""}
+        Adding about <strong>${esc(m.need_label)}</strong> carries you to the end of the semester.${oneTime}</span></p>`);
     } else if (m.pace > 0) {
       lines.push(`<p class="fc-line">${VH.svg("card")}<span>
-        At your pace of about <strong>${esc(m.pace_label)} a day</strong>, ${m.runs_out ? `your balance lasts until <strong>${esc(m.runs_out)}</strong>.` : "your balance lasts well past the semester."}
-        ${m.before_end ? `Adding about ${esc(m.need_label)} would carry you to ${esc(m.term_end)}.` : `That covers you through the end of the semester, ${esc(m.term_end)}.`}</span></p>`);
+        At your usual pace of about <strong>${esc(m.pace_label)} a day</strong>, ${m.runs_out ? `your balance lasts until <strong>${esc(m.runs_out)}</strong>.` : "your balance lasts well past the semester."}
+        ${m.before_end ? `Adding about ${esc(m.need_label)} would carry you to ${esc(m.term_end)}.` : `That covers you through the end of the semester, ${esc(m.term_end)}.`}${oneTime}</span></p>`);
     } else {
-      lines.push(`<p class="fc-line">${VH.svg("card")}<span>No purchases in the last two weeks, so your balance is holding steady.</span></p>`);
+      lines.push(`<p class="fc-line">${VH.svg("card")}<span>No purchases in the last two weeks, so your balance is holding steady.${oneTime}</span></p>`);
     }
     if (sw) {
       lines.push(`<p class="fc-line${sw.short ? " is-short" : ""}">${VH.svg(sw.short ? "alert" : "meal")}<span>
@@ -76,7 +78,7 @@
   /* ---------- Low balance alert setting ---------- */
   $("[data-low-alert]", page).addEventListener("change", async (e) => {
     try {
-      const data = await VH.api("/api/viking-card/low-alert", { method: "POST", body: { cents: Number(e.target.value) } });
+      const data = await VH.api("/api/viking-card/low-alert", { method: "POST", body: { days: Number(e.target.value) } });
       update(data.insights);
       VH.toast(data.message);
     } catch (err) { VH.toast(err.message, "error"); }
