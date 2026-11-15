@@ -45,3 +45,16 @@ self.addEventListener("fetch", (event) => {
   }
   // Everything else (/api and the rest) goes to the server as usual.
 });
+
+/* Tapping a notification opens the page the alert links to */
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = new URL((event.notification.data && event.notification.data.url) || "/home", self.location.origin).href;
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+      const open = list.find((c) => new URL(c.url).origin === self.location.origin);
+      if (open) return open.focus().then((c) => (c || open).navigate(url));
+      return self.clients.openWindow(url);
+    })
+  );
+});

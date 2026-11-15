@@ -1745,3 +1745,4 @@ html.map-expanded, html.map-expanded body { overflow: hidden; }
   .ww-hours li:nth-child(4) { display: none; }
   .ww-hours li { min-width: 44px; }
 }
+.set-status { margin: 0; padding: 10px 16px 14px; font-size: .86rem; color: var(--text-muted); }

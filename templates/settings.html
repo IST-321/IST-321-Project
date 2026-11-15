@@ -26,6 +26,15 @@
     </ul>
   </section>
 
+  <section class="panel" aria-labelledby="set-notify">
+    <header class="panel-head"><h3 id="set-notify">Phone notifications</h3></header>
+    <ul class="set-list">
+      <li><label class="set-row"><span><strong>Show new alerts as notifications</strong><small>New alerts appear on your phone or computer while Viking Hub is open or in the background. Alert types turned off above won't notify.</small></span>
+        <input class="switch" type="checkbox" data-notify></label></li>
+    </ul>
+    <p class="set-status" data-notify-status hidden></p>
+  </section>
+
   <section class="panel" aria-labelledby="set-sound">
     <header class="panel-head"><h3 id="set-sound">Sounds and motion</h3></header>
     <ul class="set-list">
@@ -72,6 +81,28 @@
     save({ alerts_off: [...page.querySelectorAll("[data-alert-type]")].filter((x) => !x.checked).map((x) => x.dataset.alertType) });
   }));
   page.querySelectorAll("[data-pref]").forEach((c) => c.addEventListener("change", () => save({ [c.dataset.pref]: c.checked })));
+
+  /* Phone notifications: the browser asks for permission the first time this is turned on */
+  const notifySwitch = page.querySelector("[data-notify]");
+  const notifyStatus = page.querySelector("[data-notify-status]");
+  const status = (text) => { notifyStatus.textContent = text || ""; notifyStatus.hidden = !text; };
+  const why = () => {
+    if (VH.notify.supported()) return Notification.permission === "denied"
+      ? "Notifications are blocked for Viking Hub. Allow them in your phone or browser settings, then turn this on again." : "";
+    const iphone = /iPhone|iPad|iPod/.test(navigator.userAgent) && !navigator.standalone;
+    return iphone ? "On iPhone, add Viking Hub to your home screen first (Share, then Add to Home Screen), then turn this on in the installed app."
+                  : "This browser can't show notifications from Viking Hub here. Try the installed app or a browser like Chrome on the live site.";
+  };
+  notifySwitch.checked = Boolean(window.VH_PREFS && VH_PREFS.notify) && VH.notify.allowed();
+  status(notifySwitch.checked ? "" : why());
+  notifySwitch.addEventListener("change", async () => {
+    if (!notifySwitch.checked) { status(""); save({ notify: false }); return; }
+    const ok = await VH.notify.ask();
+    if (!ok) { notifySwitch.checked = false; status(why() || "Notifications weren't allowed. You can try again any time."); return; }
+    status("");
+    await save({ notify: true });
+    VH.notify.show({ id: "test", title: "Notifications are on", body: "New Viking Hub alerts will show up here.", url: "/settings" });
+  });
 })();
 </script>
 {% endblock %}

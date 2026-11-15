@@ -283,7 +283,8 @@ CREATE TABLE IF NOT EXISTS settings (
     alerts_off      TEXT NOT NULL DEFAULT '',    -- comma separated alert categories turned off
     sound_horn      INTEGER NOT NULL DEFAULT 1,
     sound_war_cry   INTEGER NOT NULL DEFAULT 1,
-    reduce_motion   INTEGER NOT NULL DEFAULT 0
+    reduce_motion   INTEGER NOT NULL DEFAULT 0,
+    notify          INTEGER NOT NULL DEFAULT 0   -- phone notifications for new alerts
 );
 
 -- Book a space: library rooms reserved in Viking Hub, and Rec Center group fitness classes

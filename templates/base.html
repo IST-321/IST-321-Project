@@ -20,6 +20,7 @@
   {# Saved view settings only last while the app is running; each launch starts fresh #}
   <script>
     window.VH_BOOT = {{ boot_id|tojson }};
+    window.VH_SID = {{ (student.student_id if student else '')|tojson }};
     try {
       if (localStorage.getItem('vh-boot') !== window.VH_BOOT) { localStorage.removeItem('vh-nav'); localStorage.setItem('vh-boot', window.VH_BOOT); }
       // The sidebar starts collapsed each time the app opens.

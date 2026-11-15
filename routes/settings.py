@@ -1,4 +1,4 @@
-"""Settings: text size, which alerts arrive, sounds and motion."""
+"""Settings: text size, which alerts arrive, notifications, sounds and motion."""
 from flask import Blueprint, abort, jsonify, render_template, request, session
 
 from db import get_db, query_one
@@ -6,7 +6,7 @@ from security import login_required
 
 bp = Blueprint("settings", __name__)
 
-DEFAULTS = {"text_size": "default", "alerts_off": [], "sound_horn": True, "sound_war_cry": True, "reduce_motion": False}
+DEFAULTS = {"text_size": "default", "alerts_off": [], "sound_horn": True, "sound_war_cry": True, "reduce_motion": False, "notify": False}
 TEXT_SIZES = [("default", "Default"), ("large", "Large"), ("larger", "Larger")]
 
 
@@ -16,7 +16,7 @@ def get_settings(sid):
         return dict(DEFAULTS)
     return {"text_size": row["text_size"], "alerts_off": [c for c in row["alerts_off"].split(",") if c],
             "sound_horn": bool(row["sound_horn"]), "sound_war_cry": bool(row["sound_war_cry"]),
-            "reduce_motion": bool(row["reduce_motion"])}
+            "reduce_motion": bool(row["reduce_motion"]), "notify": bool(row["notify"])}
 
 
 @bp.route("/settings")
@@ -45,16 +45,17 @@ def save():
             abort(400, description="Choose which alerts to turn off.")
         off = [c for c in data["alerts_off"] if isinstance(c, str) and c in CATEGORY_LABELS]
         prefs["alerts_off"] = off
-    for key in ("sound_horn", "sound_war_cry", "reduce_motion"):
+    for key in ("sound_horn", "sound_war_cry", "reduce_motion", "notify"):
         if key in data:
             prefs[key] = bool(data[key])
     db = get_db()
     db.execute(
-        """INSERT INTO settings (student_id, text_size, alerts_off, sound_horn, sound_war_cry, reduce_motion)
-           VALUES (?, ?, ?, ?, ?, ?)
+        """INSERT INTO settings (student_id, text_size, alerts_off, sound_horn, sound_war_cry, reduce_motion, notify)
+           VALUES (?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(student_id) DO UPDATE SET text_size = excluded.text_size, alerts_off = excluded.alerts_off,
-             sound_horn = excluded.sound_horn, sound_war_cry = excluded.sound_war_cry, reduce_motion = excluded.reduce_motion""",
+             sound_horn = excluded.sound_horn, sound_war_cry = excluded.sound_war_cry, reduce_motion = excluded.reduce_motion,
+             notify = excluded.notify""",
         (sid, prefs["text_size"], ",".join(prefs["alerts_off"]), int(prefs["sound_horn"]), int(prefs["sound_war_cry"]),
-         int(prefs["reduce_motion"])))
+         int(prefs["reduce_motion"]), int(prefs["notify"])))
     db.commit()
     return jsonify(prefs=prefs, message="Settings saved")

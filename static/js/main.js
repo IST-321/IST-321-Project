@@ -599,9 +599,43 @@
     });
   }
 
+  /* ---------- Phone notifications for new alerts ----------
+     Each tab remembers which alerts it has already seen. The first list after signing in
+     only sets that starting point; any alert that shows up after it notifies once. */
+  const SEEN_KEY = "vh-notified";
+  VH.notify = {
+    supported: () => "Notification" in window && "serviceWorker" in navigator && window.isSecureContext,
+    allowed: () => VH.notify.supported() && Notification.permission === "granted",
+    async ask() {
+      if (!VH.notify.supported()) return false;
+      if (Notification.permission === "granted") return true;
+      try { return (await Notification.requestPermission()) === "granted"; } catch (_) { return false; }
+    },
+    async show(a) {
+      if (!VH.notify.allowed()) return;
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (!reg) return;
+      reg.showNotification(a.title, {
+        body: a.body || "", tag: `vh-alert-${a.id}`, data: { url: a.url || "/home" },
+        icon: "/static/images/app/icon-192.png", badge: "/static/images/app/badge-96.png",
+      });
+    },
+  };
+  function notifyNew(list) {
+    let seen = null;
+    try { seen = JSON.parse(sessionStorage.getItem(SEEN_KEY) || "null"); } catch (_) { /* no storage: no notifications */ }
+    const ids = list.map((a) => a.id);
+    const fresh = !seen || seen.boot !== window.VH_BOOT || seen.sid !== window.VH_SID;
+    const known = new Set(fresh ? [] : seen.ids);
+    if (!fresh && prefs().notify) list.filter((a) => !known.has(a.id)).reverse().forEach((a) => VH.notify.show(a));
+    ids.forEach((id) => known.add(id));
+    try { sessionStorage.setItem(SEEN_KEY, JSON.stringify({ boot: window.VH_BOOT, sid: window.VH_SID, ids: [...known] })); } catch (_) { /* fine */ }
+  }
+  if (window.VH_SID) notifyNew(alerts);
+
   VH.alerts = {
     async refresh() {
-      try { alerts = (await VH.api("/api/alerts")).alerts; render(); } catch (_) {}
+      try { alerts = (await VH.api("/api/alerts")).alerts; render(); notifyNew(alerts); } catch (_) {}
     },
   };
 
@@ -729,6 +763,7 @@
         if (!data.alert) return;
         alerts = [data.alert, ...alerts.filter((a) => a.id !== data.alert.id)];
         render();
+        notifyNew(alerts);
         shakeHorn();
         liveCard(data.alert);
       } catch (_) { /* nothing new this time */ }
