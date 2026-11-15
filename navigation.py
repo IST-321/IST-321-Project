@@ -17,6 +17,8 @@ SERVICES = [
      "blurb": "Borrow a laptop, calculator or other equipment", "mobile": False},
     {"endpoint": "spaces.index", "label": "Book a space", "short": "Spaces", "icon": "door",
      "blurb": "Library study rooms and Rec Center classes", "mobile": False},
+    {"endpoint": "jobs.index", "label": "Student jobs", "short": "Jobs", "icon": "briefcase",
+     "blurb": "On-campus jobs, work-study and Handshake", "mobile": False},
     {"endpoint": "lift_up_vikes.index", "label": "Lift Up Vikes", "short": "Pantry", "icon": "basket",
      "blurb": "Food pantry appointments and support", "mobile": False},
 ]

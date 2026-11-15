@@ -1,5 +1,5 @@
 """Route blueprints, one per section of the site."""
-from routes import (auth, campus_map, dashboard, events, grades, install, lift_up_vikes, search, settings, spaces,
+from routes import (auth, campus_map, dashboard, events, grades, install, jobs, lift_up_vikes, search, settings, spaces,
                     mobile_campus, orientation, schedule, transportation,
                     viking_card)
 
@@ -19,4 +19,5 @@ ALL_BLUEPRINTS = [
     search.bp,
     settings.bp,
     install.bp,
+    jobs.bp,
 ]

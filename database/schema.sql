@@ -160,7 +160,8 @@ CREATE TABLE IF NOT EXISTS events (
     end_time        TEXT,
     location        TEXT,
     notes           TEXT,
-    source_id       INTEGER REFERENCES campus_events(id) ON DELETE SET NULL  -- set when added from Events
+    source_id       INTEGER REFERENCES campus_events(id) ON DELETE SET NULL,  -- set when added from Events
+    job_id          INTEGER                 -- set for work shifts added from Student jobs
 );
 
 -- Campus map pins (a building pin has a code; a dropped pin has x/y map coordinates)
@@ -318,4 +319,24 @@ CREATE TABLE IF NOT EXISTS rec_signups (
     class_id        INTEGER NOT NULL REFERENCES rec_classes(id),
     class_date      TEXT NOT NULL,
     event_id        INTEGER REFERENCES events(id) ON DELETE SET NULL
+);
+
+-- Student jobs: sample on-campus openings (CSU posts the real ones in Handshake)
+CREATE TABLE IF NOT EXISTS jobs (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    title           TEXT NOT NULL,
+    dept            TEXT NOT NULL,
+    location        TEXT NOT NULL,
+    building        TEXT,                   -- campus map code
+    pay_cents       INTEGER NOT NULL,       -- per hour
+    fws             INTEGER NOT NULL DEFAULT 0,  -- open to Federal Work Study
+    shifts          TEXT NOT NULL,          -- "M 14:00-18:00;W 14:00-18:00"
+    posted          TEXT NOT NULL,
+    description     TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS job_saves (
+    student_id      TEXT NOT NULL REFERENCES students(student_id) ON DELETE CASCADE,
+    job_id          INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+    PRIMARY KEY (student_id, job_id)
 );

@@ -317,8 +317,8 @@
   if (searchDlg) {
     const input = $("[data-search-input]", searchDlg);
     const box = $("[data-search-results]", searchDlg);
-    const GROUPS = ["Pages", "Buildings", "Offices and resources", "Your classes and assignments", "Clubs", "Campus events", "Alerts"];
-    const GROUP_ICON = { "Pages": "grid", "Buildings": "building", "Offices and resources": "info", "Your classes and assignments": "calendar",
+    const GROUPS = ["Pages", "Buildings", "Offices and resources", "Your classes and assignments", "Clubs", "Campus events", "Jobs", "Alerts"];
+    const GROUP_ICON = { "Pages": "grid", "Buildings": "building", "Offices and resources": "info", "Your classes and assignments": "calendar", "Jobs": "briefcase",
                          "Clubs": "ticket", "Campus events": "ticket", "Alerts": "alert" };
     let index = null, hits = [], active = 0;
     const norm = (t) => (t || "").toLowerCase().replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();

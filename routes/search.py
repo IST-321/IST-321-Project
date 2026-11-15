@@ -29,6 +29,7 @@ PAGE_WORDS = {
     "orientation.resources_page": "resources directory offices first semester",
     "spaces.index": "library study room reserve rec center gym fitness yoga cycling zumba workout",
     "settings.index": "preferences text size sounds motion alerts notifications",
+    "jobs.index": "job work employment handshake hire a vike work study fws career on campus",
 }
 
 
@@ -65,6 +66,8 @@ def build_index(sid):
         add("Pages", p["label"], p.get("blurb", ""), url_for(p["endpoint"]), PAGE_WORDS.get(p["endpoint"], ""))
     add("Pages", "Parking near my class", "Closest garage, walk and open spaces",
         url_for("transportation.parking") + "#near", "nearest garage closest parking class building walk spaces")
+    for j in query_all("SELECT id, title, dept FROM jobs"):
+        add("Jobs", j["title"], j["dept"], url_for("jobs.index") + f"#job-{j['id']}", "job work opening")
 
     for code, (name, category, address, inside) in BUILDINGS.items():
         add("Buildings", name, f"{code} · {address}", url_for("campus_map.index", b=code),

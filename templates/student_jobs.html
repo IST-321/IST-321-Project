@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="jobs-page" data-jobs-page>
+
+  <section class="jobs-intro">
+    <p>CSU posts on-campus jobs, internships and co-ops in Handshake, CSU's Hire A Vike job board. Browse openings here, check them against your classes and CSU's hour limits, then apply in Handshake.</p>
+    <div class="jobs-actions">
+      <a class="btn btn-primary" href="{{ handshake }}" target="_blank" rel="noopener">Open Handshake {{ icon('external') }}<span class="visually-hidden">(opens in a new tab)</span></a>
+      <a class="btn btn-ghost" href="{{ office.url }}" target="_blank" rel="noopener">Career Development and Exploration {{ icon('external') }}<span class="visually-hidden">(opens in a new tab)</span></a>
+    </div>
+  </section>
+
+  <div class="mc-layout">
+    <div>
+      {# ---------- Weekly hours ---------- #}
+      <section class="panel" id="my-hours" aria-labelledby="hours-title">
+        <header class="panel-head"><h3 id="hours-title">Your work hours</h3></header>
+        <div class="panel-pad" data-jobs-hours></div>
+      </section>
+
+      {# ---------- Openings ---------- #}
+      <section class="panel" id="openings" aria-labelledby="open-title">
+        <header class="panel-head jobs-head">
+          <div><h3 id="open-title">On-campus openings</h3><p class="muted small">Apply for every opening in Handshake</p></div>
+          <div class="chip-row" role="group" aria-label="Show">
+            <button class="chip is-on" type="button" data-jobs-filter="">All</button>
+            <button class="chip" type="button" data-jobs-filter="fits">Fits my classes</button>
+            <button class="chip" type="button" data-jobs-filter="fws">Work-study</button>
+            <button class="chip" type="button" data-jobs-filter="saved">Saved</button>
+          </div>
+        </header>
+        <ul class="job-list" data-job-list></ul>
+      </section>
+    </div>
+
+    <aside>
+      <section class="panel" id="job-rules" aria-labelledby="rules-title" data-collapsible>
+        <header class="panel-head"><h3 id="rules-title">How on-campus jobs work</h3></header>
+        <div class="panel-pad"><ul class="rule-list">{% for r in rules %}<li>{{ r }}</li>{% endfor %}</ul></div>
+      </section>
+
+      <section class="panel" id="work-study" aria-labelledby="fws-title" data-collapsible>
+        <header class="panel-head"><h3 id="fws-title">Federal Work Study</h3></header>
+        <div class="panel-pad"><ul class="rule-list">{% for r in work_study %}<li>{{ r }}</li>{% endfor %}</ul></div>
+      </section>
+
+      <section class="panel" aria-labelledby="guides-title" data-collapsible>
+        <header class="panel-head"><h3 id="guides-title">Forms and guides</h3></header>
+        <ul class="acct-list">
+          {% for label, url, blurb in guides %}
+            <li><a class="row-link" href="{{ url }}" target="_blank" rel="noopener">
+              <span class="row-icon">{{ icon('book') }}</span>
+              <span class="row-text"><strong>{{ label }}</strong><small>{{ blurb }}</small></span>
+              {{ icon('external', 'row-chevron') }}<span class="visually-hidden">(opens in a new tab)</span>
+            </a></li>
+          {% endfor %}
+        </ul>
+      </section>
+
+      <section class="panel" aria-labelledby="cde-title" data-collapsible>
+        <header class="panel-head"><h3 id="cde-title">{{ office.name }}</h3></header>
+        <div class="panel-pad">
+          <ul class="contact-list">
+            <li>{{ icon('pin') }} <a href="{{ url_for('campus_map.index', b=office.code) }}">{{ office.where }}</a></li>
+            <li>{{ icon('clock') }} <span>{{ office.hours }}</span></li>
+            <li>{{ icon('mail') }} <a href="mailto:{{ office.email }}">{{ office.email }}</a></li>
+          </ul>
+          <p class="muted small">Questions about student employment, work-study, internships and Handshake go here.</p>
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>
+<script type="application/json" id="jobs-data">{{ {'state': state, 'handshake': handshake}|tojson }}</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/jobs.js') }}"></script>
+{% endblock %}

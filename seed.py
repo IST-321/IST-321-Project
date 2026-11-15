@@ -41,6 +41,35 @@ DEPOSITS = {
 }
 
 
+# Student jobs: sample on-campus openings. Shifts are weekly: M T W R F S U, 24-hour times.
+JOBS = [
+    ("Library circulation desk assistant", "Michael Schwartz Library", "Rhodes Tower, library first floor", "RT", 1125, 1,
+     "M 14:00-18:00;W 14:00-18:00", "2026-11-10",
+     "Check books and laptops in and out, help visitors find materials and keep the study areas in order. Training provided."),
+    ("Career peer advisor", "Career Development and Exploration", "Berkman Hall 116", "BH", 1200, 1,
+     "T 15:30-18:30;R 15:30-18:30", "2026-11-09",
+     "Review resumes, help students set up Handshake profiles and promote career events. Good communication skills required."),
+    ("Recreation Center front desk attendant", "Recreation Center", "Recreation Center, main entrance", "RC", 1100, 1,
+     "T 09:00-13:00;R 09:00-13:00", "2026-11-11",
+     "Check members in with their Viking Card, answer questions about programs and help keep the facility safe and clean."),
+    ("Math tutor", "Tutoring and Academic Success Center", "Michael Schwartz Library, Rhodes Tower", "RT", 1300, 0,
+     "S 10:00-14:00", "2026-11-06",
+     "Tutor students in MTH 116 and other introductory math courses, one on one and in small drop-in groups. B or better in the course required."),
+    ("Event assistant", "Campus Activities Board", "Student Center", "SC", 1100, 0,
+     "R 17:00-21:00;S 12:00-16:00", "2026-11-12",
+     "Help set up, run and break down CAB events like CABsino and movie nights, and greet students at the door."),
+    ("Student Center information desk", "Student Life", "Student Center, first floor", "SC", 1100, 1,
+     "M 08:00-12:00;W 08:00-12:00", "2026-11-05",
+     "Answer questions, give directions and share event information with students and visitors at the main desk."),
+    ("Parking Services office assistant", "Parking Services", "Berkman Hall 115", "BH", 1150, 1,
+     "T 11:00-15:00;R 11:00-15:00", "2026-11-04",
+     "Help students and visitors with permits and questions, file paperwork and answer phones."),
+    ("IS&T help desk technician", "Information Services and Technology", "Rhodes Tower", "RT", 1250, 0,
+     "M 15:00-18:00;F 14:00-17:00", "2026-11-03",
+     "Troubleshoot account, Wi-Fi and software problems by phone and in person, and log every request. Comfort with Windows and Mac needed."),
+]
+
+
 def seed_all(db, config):
     """Fill each area that is still empty, so a database from an earlier
     phase picks up the new sample data without losing anything."""
@@ -60,6 +89,9 @@ def seed_all(db, config):
         _seed_equipment_list(db)
     if empty("rec_classes"):
         _seed_rec_classes(db)
+    if empty("jobs"):
+        db.executemany("""INSERT INTO jobs (title, dept, location, building, pay_cents, fws, shifts, posted, description)
+                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""", JOBS)
 
     # Each sign-in gets its own full copy of Magnus Viking's data
     for sid in [config["SAMPLE_STUDENT_ID"], *config.get("EXTRA_STUDENT_IDS", [])]:

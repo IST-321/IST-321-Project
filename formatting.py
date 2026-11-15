@@ -23,3 +23,9 @@ def nice_date(value, fmt="%b %d, %Y"):
 def slug(text):
     """A short id for links to a spot on a page, e.g. 'Join a student organization' -> 'join-a-student-organization'."""
     return re.sub(r"[^a-z0-9]+", "-", str(text or "").lower()).strip("-")
+
+
+def nice_time(hhmm):
+    """"13:30" -> "1:30 PM"."""
+    h, m = map(int, hhmm.split(":"))
+    return f"{h % 12 or 12}:{m:02d} {'AM' if h < 12 else 'PM'}"
