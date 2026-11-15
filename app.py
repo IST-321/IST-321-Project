@@ -90,8 +90,10 @@ def create_app():
         from alerts import project_today
         from routes.schedule import TERM
         today = project_today()
+        from alerts import clock
         app_day = {"today": today, "iso": today.isoformat(), "default": app.config["PROJECT_DATE"],
-                   "max": TERM["end"], "moved": today.isoformat() != app.config["PROJECT_DATE"]}
+                   "max": TERM["end"], "moved": today.isoformat() != app.config["PROJECT_DATE"],
+                   "clock": clock().strftime("%H:%M")}
         prefs = None
         if "student_id" in session:
             from routes.settings import get_settings

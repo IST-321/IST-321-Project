@@ -166,9 +166,11 @@
     });
     return out;
   }
-  function walkHTML(w) {
+  // data-walk-* lets weather.js add a rain, snow or cold note to walks on today's date
+  function walkHTML(w, day) {
     if (!w) return "";
-    return `<span class="walk-line">${VH.svg("walk")}<span>${w.same ? (w.fromHome ? `At your home building, ${esc(w.from)}` : "Same building as your last stop")
+    const wx = w.same || !day ? "" : ` data-walk-at="${w.leave}" data-walk-min="${w.minutes}" data-walk-day="${day}"${w.indoor ? " data-walk-indoor" : ""}`;
+    return `<span class="walk-line"${wx}>${VH.svg("walk")}<span>${w.same ? (w.fromHome ? `At your home building, ${esc(w.from)}` : "Same building as your last stop")
       : `${w.minutes} min walk from ${esc(w.from)}, leave by ${fmtTime(w.leave)}`}</span>${w.indoor
       ? ` <a class="walk-indoor" href="/campus-map?innerlink=1">Indoor route: Innerlink</a>` : ""}</span>`;
   }
@@ -182,7 +184,7 @@
     const walks = walkLines(timed);
     const list = (items) => items.map((it) => `<li class="day-row">
         <span class="day-time">${it.type === "assignment" ? "Due " + fmtTime(it.start) : it.start ? fmtTime(it.start) : "All day"}
-          ${it.end ? `<small>${fmtTime(it.end)}</small>` : ""}</span><div class="day-main">${chip(it)}${walkHTML(walks.get(it))}</div></li>`).join("");
+          ${it.end ? `<small>${fmtTime(it.end)}</small>` : ""}</span><div class="day-main">${chip(it)}${walkHTML(walks.get(it), iso(cursor))}</div></li>`).join("");
     let html = "";
     if (allDay.length) html += `<h4 class="day-label">Due and all day</h4><ul class="day-list">${list(allDay)}</ul>`;
     html += `<h4 class="day-label">Schedule</h4>`;
@@ -322,7 +324,7 @@
     const { timed } = itemsFor(parseDate(onDate));
     const item = timed.find((i) => i.type === "class" && i.id === c.id && !i.canceled);
     const w = item && walkLines(timed).get(item);
-    return w ? `<div><dt>Getting there</dt><dd>${walkHTML(w)}</dd></div>` : "";
+    return w ? `<div><dt>Getting there</dt><dd>${walkHTML(w, onDate)}</dd></div>` : "";
   }
 
   function showDetails(type, id, onDate) {

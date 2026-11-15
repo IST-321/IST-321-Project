@@ -236,7 +236,7 @@
   <script type="application/json" id="icon-data">{{ icon_paths()|tojson }}</script>
   <script type="application/json" id="sound-data">{{ sounds()|tojson }}</script>
   {% if student %}<script type="application/json" id="alerts-data">{{ alerts|tojson }}</script>
-  <script>window.VH_MOMENT = {{ update_ready|tojson }}; window.VH_PREFS = {{ prefs_global|tojson }}; window.VH_PREVIEW = {{ (app_day.today.strftime('%A, %B ') ~ app_day.today.day if app_day.moved else '')|tojson }};</script>{% endif %}
+  <script>window.VH_MOMENT = {{ update_ready|tojson }}; window.VH_PREFS = {{ prefs_global|tojson }}; window.VH_PREVIEW = {{ (app_day.today.strftime('%A, %B ') ~ app_day.today.day if app_day.moved else '')|tojson }}; window.VH_WEATHER = {{ {'today': app_day.default, 'now': app_day.clock, 'off': app_day.moved}|tojson }};</script>{% endif %}
 
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   {% block scripts %}{% endblock %}

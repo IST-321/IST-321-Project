@@ -1724,3 +1724,24 @@ html.map-expanded, html.map-expanded body { overflow: hidden; }
   .near-controls { grid-template-columns: 1fr; }
   .route-banner { left: 8px; right: 8px; top: 8px; font-size: .8rem; }
 }
+
+/* Weather on Home (Open-Meteo) */
+.welcome-weather { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, .18); }
+.welcome-weather[hidden] { display: none; }
+.ww-now { display: flex; align-items: center; gap: 8px; }
+.ww-now .icon { width: 30px; height: 30px; color: #fff; }
+.ww-now strong { display: block; font-size: 1.2rem; line-height: 1.1; }
+.ww-now small { display: block; font-size: .8rem; opacity: .85; }
+.ww-hours { display: flex; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.ww-hours li { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 50px; padding: 5px 6px; border-radius: var(--radius-sm); background: rgba(255, 255, 255, .1); font-size: .82rem; }
+.ww-hours small { font-size: .72rem; opacity: .85; }
+.ww-hours .icon { width: 18px; height: 18px; color: #fff; }
+.ww-credit { flex-basis: 100%; font-size: .72rem; color: #fff; opacity: .7; text-decoration: none; }
+.ww-credit:hover { opacity: 1; text-decoration: underline; }
+.walk-weather { display: flex; align-items: flex-start; gap: 6px; margin-top: 3px; font-size: .82rem; color: var(--green-dark, #00523b); }
+.walk-weather .icon { width: 15px; height: 15px; flex-shrink: 0; margin-top: 1px; color: var(--green); }
+.walk-weather a { color: inherit; font-weight: 600; }
+@media (max-width: 639px) {
+  .ww-hours li:nth-child(4) { display: none; }
+  .ww-hours li { min-width: 44px; }
+}
