@@ -193,11 +193,20 @@ def _my_places(sid):
 def index():
     sid = session["student_id"]
     selected = (request.args.get("b") or "").upper()
+    # "from" draws the walk from a garage to the selected building (Parking near my class)
+    route_from = (request.args.get("from") or "").upper()
+    route = None
+    if selected in PINS and route_from in PINS and BUILDINGS.get(route_from, ("", ""))[1] == "Parking":
+        from walking import indoor, walk_minutes
+        same = PINS[route_from] == PINS[selected]
+        route = {"from": route_from, "from_name": BUILDINGS[route_from][0], "to": selected, "to_name": BUILDINGS[selected][0],
+                 "minutes": 0 if same else walk_minutes(PINS[route_from], PINS[selected]), "same": same,
+                 "indoor": indoor(route_from, selected)}
     return render_template(
         "campus_map.html", title="Campus map", buildings=building_list(), categories=CATEGORIES,
         selected=selected if selected in BUILDINGS else "", official_map=OFFICIAL_MAP, official_pdf=OFFICIAL_PDF,
         pins=_pins(sid), places=_my_places(sid), innerlink=INNERLINK,
-        open_innerlink=request.args.get("innerlink") == "1",
+        open_innerlink=request.args.get("innerlink") == "1", route=route,
     )
 
 

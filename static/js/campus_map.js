@@ -166,6 +166,7 @@
         ${pinned ? `<button class="btn btn-ghost btn-sm" type="button" data-unpin="${pinned.id}">${VH.svg("pin")} Unpin</button>${homeBtn(pinned)}`
                  : `<button class="btn btn-primary btn-sm" type="button" data-pin-building="${b.code}">${VH.svg("pin")} Pin to my map</button>`}
         <a class="btn btn-ghost btn-sm" href="${directions}" target="_blank" rel="noopener">Directions</a>
+        ${b.category !== "Parking" && b.pin ? `<a class="btn btn-ghost btn-sm" href="/parking?near=${esc(b.code)}#near">${VH.svg("parking")} Parking nearby</a>` : ""}
       </div>`;
   }
 
@@ -492,8 +493,57 @@
   window.addEventListener("resize", placePopup);
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !pop.hidden && !document.fullscreenElement) closePopup(); });
 
+  /* ---------- Walk from a garage (Parking near my class) ---------- */
+  const routeBanner = $("[data-route-banner]", page);
+  function fitTo(points, pad = 40) {
+    const xs = points.map((p) => p[0]), ys = points.map((p) => p[1]);
+    let w = Math.max(...xs) - Math.min(...xs) + pad * 2;
+    let h = Math.max(...ys) - Math.min(...ys) + pad * 2;
+    const ratio = FULL.h / FULL.w;
+    if (h > w * ratio) w = h / ratio;
+    w = Math.min(FULL.w, Math.max(w, FULL.w / (VHMap.phone() ? 4 : 2)));
+    const cx = (Math.max(...xs) + Math.min(...xs)) / 2, cy = (Math.max(...ys) + Math.min(...ys)) / 2;
+    box = { x: cx - w / 2, y: cy - (w * ratio) / 2, w, h: w * ratio };
+    clamp(); apply();
+  }
+  function clearRoute() {
+    $$(".m-route", svg).forEach((g) => g.remove());
+    $$(".m-bldg.is-route-start", svg).forEach((g) => g.classList.remove("is-route-start"));
+    $$(".m-tag.is-route-end", svg).forEach((g) => g.classList.remove("is-route-end"));
+    routeBanner.hidden = true;
+  }
+  function drawRoute(r) {
+    clearRoute();
+    const a = byCode[r.from].pin, b = byCode[r.to].pin;
+    const ns = "http://www.w3.org/2000/svg";
+    const g = document.createElementNS(ns, "g");
+    g.setAttribute("class", "m-route");
+    g.setAttribute("aria-hidden", "true");
+    g.innerHTML = r.same ? "" : `<line class="m-route-line" x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}"/>`;
+    svg.insertBefore(g, $(".m-tags", svg));
+    $$(`.m-bldg[data-code="${byCode[r.from].shape}"]`, svg).forEach((x) => x.classList.add("is-route-start"));
+    [r.from, r.to].forEach((c) => $$(`.m-tag[data-code="${c}"]`, svg).forEach((x) => x.classList.add("is-route-end")));
+    $$(`.m-bldg[data-code="${byCode[r.to].shape}"]`, svg).forEach((x) => x.classList.add("is-selected"));
+    const walk = r.same ? `${esc(r.to_name)} is right above ${esc(r.from_name)}`
+      : `About ${r.minutes} min walk from ${esc(r.from_name)} to ${esc(r.to_name)}${r.indoor ? ". Indoor route: Innerlink" : ""}`;
+    routeBanner.innerHTML = `${VH.svg("walk")}<span>${walk}</span><button class="text-btn" type="button" data-clear-route>Clear</button>`;
+    routeBanner.hidden = false;
+    // Phones have a small map, so the walk line goes under it instead of on top of it
+    if (VHMap.phone()) { stage.after(routeBanner); routeBanner.classList.add("is-below"); }
+    if (!r.same) fitTo([a, b]);
+  }
+  routeBanner.addEventListener("click", (e) => {
+    if (!e.target.closest("[data-clear-route]")) return;
+    clearRoute();
+    history.replaceState(null, "", location.search.replace(/&from=[^&]*/, ""));
+  });
+
   renderPins();
-  if (page.dataset.selected) openBuilding(page.dataset.selected, { center: true });
+  if (data.route) {
+    stage.scrollIntoView({ block: "center" });
+    drawRoute(data.route);
+    history.replaceState(null, "", `?b=${data.route.to}&from=${data.route.from}`);
+  } else if (page.dataset.selected) openBuilding(page.dataset.selected, { center: true });
   else if (page.dataset.innerlink !== undefined) {
     stage.scrollIntoView({ block: "center" });
     routeHighlight(true);

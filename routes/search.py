@@ -63,6 +63,8 @@ def build_index(sid):
              + [{**g, "blurb": "Getting around"} for g in GETTING_AROUND])
     for p in pages:
         add("Pages", p["label"], p.get("blurb", ""), url_for(p["endpoint"]), PAGE_WORDS.get(p["endpoint"], ""))
+    add("Pages", "Parking near my class", "Closest garage, walk and open spaces",
+        url_for("transportation.parking") + "#near", "nearest garage closest parking class building walk spaces")
 
     for code, (name, category, address, inside) in BUILDINGS.items():
         add("Buildings", name, f"{code} · {address}", url_for("campus_map.index", b=code),

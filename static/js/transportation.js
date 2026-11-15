@@ -48,6 +48,58 @@
     });
   }
 
+  /* ---------- Parking near my class ---------- */
+  const nearBox = $("[data-near-results]");
+  if (nearBox) {
+    const LV = { "Open": "is-open", "Filling up": "is-filling", "Almost full": "is-low", "Full": "is-full" };
+    const toSel = $("[data-near-to]"), permitSel = $("[data-near-permit]");
+    const walkText = (g, r) => g.same ? `Inside ${esc(r.building)}` : `${g.walk} min walk`;
+    const card = (g, r) => `<div class="near-best garage ${LV[g.level]}">
+        <p class="near-kicker">Closest${g.available === 0 ? ", but full right now" : ""}</p>
+        <div class="garage-title"><strong>${esc(g.name)}</strong><span class="garage-level">${esc(g.level)}</span></div>
+        <small class="near-addr">${esc(g.address)}</small>
+        <div class="near-stats">
+          <div>${VH.svg("walk")}<span><strong>${walkText(g, r)}</strong><small>${g.same ? "Take the elevator up" : `to ${esc(r.building)}`}</small></span></div>
+          <div>${VH.svg("parking")}<span><strong>${g.available.toLocaleString()} open</strong><small>of ${g.capacity.toLocaleString()} spaces</small></span></div>
+        </div>
+        <div class="garage-bar" role="img" aria-label="About ${g.available} of ${g.capacity} spaces open"><span style="width:${100 - g.percent}%"></span></div>
+        ${g.indoor ? `<p class="near-indoor">${VH.svg("building")} Indoor route: Innerlink, 6 AM to midnight</p>` : ""}
+        <div class="near-actions">
+          <a class="btn btn-primary btn-sm" href="${esc(g.map_url)}">${VH.svg("map")} Show on map</a>
+          <a class="btn btn-ghost btn-sm" href="${esc(g.directions)}" target="_blank" rel="noopener">Walking directions ${VH.svg("external")}</a>
+        </div>
+      </div>`;
+    const row = (g, r) => `<li class="garage ${LV[g.level]}">
+        <div class="garage-main">
+          <div class="garage-title"><strong>${esc(g.name)}</strong><span class="garage-level">${esc(g.level)}</span></div>
+          <small>${walkText(g, r)}${g.indoor ? " · Innerlink" : ""} · ${g.available.toLocaleString()} of ${g.capacity.toLocaleString()} open</small>
+        </div>
+        <a class="btn btn-ghost btn-sm" href="${esc(g.map_url)}">${VH.svg("map")}<span>Map</span></a>
+      </li>`;
+    const loadNear = async () => {
+      nearBox.setAttribute("aria-busy", "true");
+      try {
+        const r = await VH.api(`/api/parking/near?to=${encodeURIComponent(toSel.value)}&permit=${encodeURIComponent(permitSel.value)}`);
+        const permit = r.permit === "Visitor" ? "visitor parking" : `a ${r.permit} permit`;
+        const when = r.arrive ? `Checked for parking around ${VH.fmtTime(r.arrive)}, 15 minutes before ${esc(r.course)} starts, with ${permit}.`
+                              : `Checked for right now with ${permit}.`;
+        if (!r.options.length) {
+          nearBox.innerHTML = `<p class="near-empty">${VH.svg("alert")} No garage near ${esc(r.building)} takes ${permit} at that time. Try another permit or see <a class="link" href="#where-title">Where can I park?</a> below.</p>`;
+          return;
+        }
+        const [best, ...more] = r.options;
+        nearBox.innerHTML = `${card(best, r)}
+          ${more.length ? `<p class="where-sub">Other options</p><ul class="garage-list near-more">${more.map((g) => row(g, r)).join("")}</ul>` : ""}
+          <p class="muted small near-note">${when} Walking times are estimates from the campus map. Open spaces are Viking Hub estimates; CSU doesn't publish live counts.</p>`;
+      } catch (err) {
+        nearBox.innerHTML = `<p class="near-empty">${VH.svg("alert")} ${esc(err.message)}</p>`;
+      } finally { nearBox.removeAttribute("aria-busy"); }
+    };
+    toSel.addEventListener("change", loadNear);
+    permitSel.addEventListener("change", loadNear);
+    loadNear();
+  }
+
   /* ---------- Where can I park? ---------- */
   if ($("[data-where-results]")) {
     const fmtWindow = ([a, b]) => (a === "00:00" && b === "23:59") ? "24 hours" : `${VH.fmtTime(a)} to ${VH.fmtTime(b)}`;

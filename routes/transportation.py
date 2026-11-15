@@ -7,6 +7,7 @@ CSU does not publish a live availability feed, so the numbers are sample data
 that can be refreshed in the app.
 """
 import random
+from urllib.parse import quote
 
 from flask import Blueprint, abort, jsonify, redirect, render_template, request, session, url_for
 
@@ -242,17 +243,21 @@ def availability():
     return out
 
 
-def best_garage(permit, now):
-    """The open facility with the most spaces that this permit can use right now."""
-    weekend = now.weekday() >= 5
-    hhmm = now.strftime("%H:%M")
-    allowed = set()
+def _allowed(permit, weekend, hhmm):
+    """Codes of the garages and lots a permit can use at a time of day."""
+    out = set()
     for a in ACCESS:
         window = a.get(permit)
         if window:
             start, end = window[1 if weekend else 0]
             if start <= hhmm <= end:
-                allowed.add(a["code"])
+                out.add(a["code"])
+    return out
+
+
+def best_garage(permit, now):
+    """The open facility with the most spaces that this permit can use right now."""
+    allowed = _allowed(permit, now.weekday() >= 5, now.strftime("%H:%M"))
     open_now = [g for g in availability() if g["code"] in allowed and g["available"] > 0]
     return max(open_now, key=lambda g: g["available"], default=None)
 
@@ -260,6 +265,61 @@ def best_garage(permit, now):
 def parking_for(map_code):
     """Parking details for one map code, used by the campus map popup."""
     return next((a for a in availability() if a["map"] == map_code), None)
+
+
+# ---------------------------------------------------------------------------
+# Parking near my class: the closest garages a permit can use, by walking time on the map
+# ---------------------------------------------------------------------------
+ARRIVE_EARLY_MIN = 15   # park about this long before class starts
+
+
+def near_targets(sid):
+    """What a student can look up: their in-person classes, then every campus building."""
+    from routes.campus_map import BUILDINGS, PINS
+    from walking import building_for
+    classes = []
+    for c in query_all("""SELECT id, code, days, start_time, location FROM courses
+                          WHERE student_id = ? AND delivery = 'In person' ORDER BY code""", (sid,)):
+        b = building_for(c["location"])
+        if b and c["start_time"]:
+            classes.append({"id": f"class-{c['id']}", "code": b, "label": f"{c['code']} · {c['location']}",
+                            "course": c["code"], "start_time": c["start_time"], "days": c["days"] or ""})
+    buildings = [{"id": code, "code": code, "label": f"{name} ({code})"}
+                 for code, (name, category, *_rest) in sorted(BUILDINGS.items(), key=lambda kv: kv[1][0])
+                 if category != "Parking" and code in PINS]
+    return classes, buildings
+
+
+def _addr(text, fallback):
+    return f"{text}, Cleveland, OH 44115" if text[:1].isdigit() else f"{fallback}, Cleveland State University"
+
+
+def parking_near(code, permit, hhmm, weekend):
+    """Garages on the map that the permit can use at that time, closest walk first.
+    Full garages go to the end of the list."""
+    from routes.campus_map import BUILDINGS, PINS
+    from walking import indoor, walk_minutes
+    dest = PINS[code]
+    allowed = _allowed(permit, weekend, hhmm)
+    name, _cat, address, _inside = BUILDINGS[code]
+    out = []
+    for g in availability():
+        if not g["map"] or g["map"] not in PINS or g["code"] not in allowed:
+            continue
+        same = PINS[g["map"]] == dest
+        out.append({**g, "walk": 0 if same else walk_minutes(PINS[g["map"]], dest), "same": same,
+                    "indoor": indoor(g["map"], code),
+                    "map_url": url_for("campus_map.index", b=code, **{"from": g["map"]}),
+                    "directions": "https://www.google.com/maps/dir/?api=1&travelmode=walking"
+                                  f"&origin={quote(_addr(g['address'], g['name']))}&destination={quote(_addr(address, name))}"})
+    out.sort(key=lambda g: (g["available"] == 0, g["walk"], -g["available"]))
+    return out[:3]
+
+
+def _minus(hhmm, minutes):
+    h, m = map(int, hhmm.split(":"))
+    t = max(0, h * 60 + m - minutes)
+    return f"{t // 60:02d}:{t % 60:02d}"
 
 
 def _reports(sid):
@@ -278,10 +338,46 @@ def index():
 @bp.route("/parking")
 @login_required
 def parking():
+    classes, buildings = near_targets(session["student_id"])
+    near = request.args.get("near", "")
+    if near.upper() in {b["id"] for b in buildings}:
+        near = near.upper()
+    elif near not in {c["id"] for c in classes}:
+        near = classes[0]["id"] if classes else "SC"
     return render_template(
         "parking.html", title="Parking garages and permits", office=PARKING_OFFICE, permits=PERMITS,
         overnight=OVERNIGHT, rules=RULES, notices=NOTICES, garages=availability(), access=ACCESS,
         permit_types=PERMIT_TYPES, focus=request.args.get("garage", ""),
+        near_classes=classes, near_buildings=buildings, near=near,
+    )
+
+
+@bp.route("/api/parking/near")
+@login_required
+def near_api():
+    """Closest garages to a class or building for a permit. Classes are checked at the time
+    a student would park for them; buildings at the app's current time."""
+    from routes.campus_map import BUILDINGS
+    classes, buildings = near_targets(session["student_id"])
+    to = request.args.get("to", "")
+    permit = request.args.get("permit", "Green")
+    if permit not in PERMIT_TYPES:
+        abort(400, description="Choose a permit type.")
+    target = next((c for c in classes if c["id"] == to), None) or \
+        next((b for b in buildings if b["id"] == to.upper()), None)
+    if target is None:
+        abort(404, description="Choose one of your classes or a campus building.")
+    if "start_time" in target:
+        arrive = _minus(target["start_time"], ARRIVE_EARLY_MIN)
+        weekend = bool(target["days"]) and not any(d in target["days"] for d in "MTWRF")
+    else:
+        now = project_now()
+        arrive, weekend = None, now.weekday() >= 5
+    hhmm = arrive or project_now().strftime("%H:%M")
+    return jsonify(
+        to=target["id"], code=target["code"], building=BUILDINGS[target["code"]][0],
+        course=target.get("course"), start_time=target.get("start_time"), arrive=arrive,
+        permit=permit, weekend=weekend, options=parking_near(target["code"], permit, hhmm, weekend),
     )
 
 

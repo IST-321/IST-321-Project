@@ -62,6 +62,7 @@ The database at `database/viking_hub.db` is rebuilt from `seed.py` every time th
 - **Orientation** (becomes **Resources** once complete), **Viking Card**, **Schedule**, **Campus map**
 - **Events and VikesConnect**, **Mobile Campus**, **Lift Up Vikes**
 - **Getting around**: Parking garages and permits, Plan a trip, Viking Safety Escorts, Report an issue
+- **Parking near my class** (top of the Parking page, and a Parking button on each in-person class and in each building's map popup): the closest garages your permit allows at class time, with the walk, open spaces and the route drawn on the campus map
 - **Schedule** has Planner and Grades tabs, plus calendar files (Blackboard import and .ics export)
 - **Book a space**: Michael Schwartz Library rooms and Rec Center group fitness
 - **Settings** (from the profile menu): text size, alert types, sounds and motion

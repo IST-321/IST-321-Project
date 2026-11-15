@@ -4,6 +4,33 @@
 <div class="tr-page" data-tr-page>
   {% include 'partials/getting_around_tabs.html' %}
 
+  {# ---------- Parking near my class ---------- #}
+  <section class="panel" id="near" aria-labelledby="near-title">
+    <header class="panel-head">
+      <div><h3 id="near-title">Parking near my class</h3><p class="muted small">The closest garages your permit allows, with the walk and open spaces</p></div>
+    </header>
+    <div class="panel-pad">
+      <div class="where-controls near-controls">
+        <label class="form-field"><span class="field-label">Going to</span>
+          <select class="text-input" data-near-to>
+            {% if near_classes %}<optgroup label="My classes">
+              {% for c in near_classes %}<option value="{{ c.id }}" {% if near == c.id %}selected{% endif %}>{{ c.label }}</option>{% endfor %}
+            </optgroup>{% endif %}
+            <optgroup label="Buildings">
+              {% for b in near_buildings %}<option value="{{ b.id }}" {% if near == b.id %}selected{% endif %}>{{ b.label }}</option>{% endfor %}
+            </optgroup>
+          </select>
+        </label>
+        <label class="form-field"><span class="field-label">Permit</span>
+          <select class="text-input" data-near-permit>
+            {% for p in permit_types %}<option value="{{ p }}" {% if p == 'Green' %}selected{% endif %}>{{ 'Visitor (no permit)' if p == 'Visitor' else p + ' permit' }}</option>{% endfor %}
+          </select>
+        </label>
+      </div>
+      <div class="near-results" data-near-results aria-live="polite"></div>
+    </div>
+  </section>
+
   {# ---------- Notices ---------- #}
   <section class="panel" aria-labelledby="notices-title">
     <header class="panel-head"><h3 id="notices-title">Parking and transportation notices</h3></header>

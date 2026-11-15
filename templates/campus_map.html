@@ -22,6 +22,7 @@
       {% include 'partials/campus_map_svg.html' %}
       <div class="map-tip" data-map-tip hidden></div>
       <p class="map-turn-hint">{{ icon('refresh') }} Turn your phone sideways for a bigger map. Pinch to zoom.</p>
+      <div class="route-banner" data-route-banner hidden></div>
       <div class="drop-banner" data-drop-banner hidden>{{ icon('pin') }} Click anywhere on the map to drop a pin. <button class="text-btn" type="button" data-drop-cancel>Cancel</button></div>
       <div class="map-pop" data-map-pop role="dialog" aria-live="polite" hidden></div>
       <div class="map-zoom" role="group" aria-label="Zoom">
@@ -76,7 +77,7 @@
 
 </div>
 
-<script type="application/json" id="map-data">{{ {'buildings': buildings, 'pins': pins, 'places': places, 'innerlink': innerlink}|tojson }}</script>
+<script type="application/json" id="map-data">{{ {'buildings': buildings, 'pins': pins, 'places': places, 'innerlink': innerlink, 'route': route}|tojson }}</script>
 {% endblock %}
 
 {% block scripts %}

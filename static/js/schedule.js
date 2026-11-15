@@ -238,6 +238,7 @@
         <small>${c.location ? esc(c.location) + " · " : ""}${esc(c.professor)}</small>
       </div>
       <div class="class-card-actions">
+        ${c.delivery === "In person" && c.location ? `<a class="text-btn" href="/parking?near=class-${c.id}#near">Parking</a>` : ""}
         <button class="text-btn" type="button" data-edit-class="${c.id}">Edit</button>
         <button class="text-btn danger" type="button" data-delete-class="${c.id}">Delete</button>
       </div>
@@ -340,6 +341,7 @@
         ${canceled ? `<p class="notice-inline">This class does not meet on ${fmtDate(parseDate(onDate))}. Watch Blackboard for updates.</p>` : ""}
         <div class="dialog-actions">
           <button class="btn btn-ghost" type="button" data-close>Close</button>
+          ${c.delivery === "In person" && c.location ? `<a class="btn btn-ghost" href="/parking?near=class-${c.id}#near">${VH.svg("parking")} Parking near this class</a>` : ""}
           <button class="btn btn-primary" type="button" data-edit-class="${c.id}">Edit class</button>
         </div>`);
     } else if (type === "assignment") {
