@@ -62,6 +62,20 @@
     <p class="alert-empty" data-alert-empty hidden>You're all caught up.</p>
   </section>
 
+  {# ---------- CSU's own systems, one tap away ---------- #}
+  <section class="panel home-o5" aria-labelledby="acct-title">
+    <header class="panel-head"><div><h3 id="acct-title">Your CSU accounts</h3><p class="muted small">Opens CSU's own sites in a new tab</p></div></header>
+    <ul class="acct-list">
+      {% for a in csu_accounts %}
+        <li><a class="row-link" href="{{ a.url }}" target="_blank" rel="noopener">
+          <b class="acct-mono" aria-hidden="true">{{ a.short }}</b>
+          <span class="row-text"><strong>{{ a.label }}</strong><small>{{ a.blurb }}</small></span>
+          {{ icon('external', 'row-chevron') }}<span class="visually-hidden">(opens in a new tab)</span>
+        </a></li>
+      {% endfor %}
+    </ul>
+  </section>
+
 </div>
 <div class="home-col">
   {# ---------- Today's schedule: everything for the day in order, then what's next ---------- #}

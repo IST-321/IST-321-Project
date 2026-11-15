@@ -148,6 +148,14 @@
         <a class="side-link {% if ep == item.endpoint %}is-active{% endif %}" href="{{ url_for(item.endpoint) }}"
            {% if ep == item.endpoint %}aria-current="page"{% endif %}>{{ icon(item.icon) }}<span>{{ item.label }}</span></a>
       {% endfor %}
+
+      <p class="side-group">CSU accounts</p>
+      {% for a in csu_accounts %}
+        <a class="side-link" href="{{ a.url }}" target="_blank" rel="noopener">
+          <b class="acct-mono" aria-hidden="true">{{ a.short }}</b><span>{{ a.label }}</span>{{ icon('external', 'side-ext') }}
+          <span class="visually-hidden">(opens in a new tab)</span>
+        </a>
+      {% endfor %}
     </nav>
   </aside>
   <div class="sidebar-backdrop" data-nav-close hidden></div>

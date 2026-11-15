@@ -12,13 +12,9 @@ from db import close_db, init_db, query_one
 from formatting import money, nice_date, slug
 from security import BOOT_ID, check_csrf, csrf_token
 
-from navigation import GETTING_AROUND, RESOURCES_LINK, SERVICES
+from navigation import CSU_ACCOUNTS, GETTING_AROUND, RESOURCES_LINK, SERVICES
 
-FOOTER_LINKS = [
-    {"label": "CampusNet", "url": "https://campusnet.csuohio.edu/"},
-    {"label": "MyCSU", "url": "https://mycsu.csuohio.edu/"},
-    {"label": "Blackboard", "url": "https://www.csuohio.edu/center-for-elearning/blackboard-login"},
-]
+FOOTER_LINKS = CSU_ACCOUNTS
 
 
 def create_app():
@@ -107,6 +103,7 @@ def create_app():
             "services": services,
             "getting_around": GETTING_AROUND,
             "footer_links": FOOTER_LINKS,
+            "csu_accounts": CSU_ACCOUNTS,
             "student": student,
             "csrf_token": csrf_token,
             "current_endpoint": request.endpoint,

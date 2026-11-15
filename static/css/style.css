@@ -386,9 +386,11 @@ ul { margin: 0; padding: 0; list-style: none; }
 
 /* ---------- Footer ---------- */
 .site-footer { padding: 18px 16px 24px; text-align: center; color: var(--text-muted); font-size: .86rem; border-top: 1px solid var(--border); }
-.footer-links { display: flex; justify-content: center; gap: 20px; margin-bottom: 6px; }
-.footer-links a { font-weight: 600; text-decoration: none; }
-.footer-links a:hover { text-decoration: underline; }
+.footer-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 10px; }
+.footer-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border: 1px solid var(--border); border-radius: 10px;
+  background: var(--surface); color: var(--green-dark); font-weight: 600; text-decoration: none; }
+.footer-btn .icon { width: 14px; height: 14px; color: var(--green); }
+.footer-btn:hover { border-color: var(--green); background: var(--green-tint); }
 .footer-help a { color: var(--green-dark); }
 a[href^="tel:"] { white-space: nowrap; }
 
@@ -1398,7 +1400,7 @@ body.auth { background: var(--bg); }
 /* Home: two columns on wide screens; on phones the panels run card, schedule, alerts, announcements */
 .home-grid { display: flex; flex-direction: column; }
 .home-col { display: contents; }
-.home-o2 { order: 2; } .home-o3 { order: 3; } .home-o4 { order: 4; }
+.home-o2 { order: 2; } .home-o3 { order: 3; } .home-o4 { order: 4; } .home-o5 { order: 5; }
 .sch-tools .panel { margin-top: 0; }
 #export .choice-list { margin: 12px 0 4px; }
 
@@ -1746,3 +1748,9 @@ html.map-expanded, html.map-expanded body { overflow: hidden; }
   .ww-hours li { min-width: 44px; }
 }
 .set-status { margin: 0; padding: 10px 16px 14px; font-size: .86rem; color: var(--text-muted); }
+
+/* CSU accounts: CampusNet, Blackboard and MyCSU */
+.acct-list { margin: 0; padding: 0 0 6px; list-style: none; }
+.acct-mono { display: inline-grid; place-items: center; flex-shrink: 0; width: 36px; height: 36px; border-radius: 10px;
+  background: var(--green-tint); color: var(--green-dark); font-size: .78rem; font-weight: 700; letter-spacing: .02em; }
+.side-link .acct-mono { width: 22px; height: 22px; border-radius: 6px; font-size: .62rem; }

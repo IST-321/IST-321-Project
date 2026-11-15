@@ -32,3 +32,14 @@ GETTING_AROUND = [
 # Takes Orientation's place in the menu once every orientation step is complete
 RESOURCES_LINK = {"endpoint": "orientation.resources_page", "label": "Resources", "short": "Resources", "icon": "book",
                   "blurb": "First semester resources and the new student directory", "mobile": False}
+
+
+# CSU's own systems. Viking Hub links out to them; it doesn't replace them.
+CSU_ACCOUNTS = [
+    {"label": "CampusNet", "short": "CN", "url": "https://campusnet.csuohio.edu/",
+     "blurb": "Registration, official grades, your bill and financial aid"},
+    {"label": "Blackboard", "short": "BB", "url": "https://www.csuohio.edu/center-for-elearning/blackboard-login",
+     "blurb": "Course materials and assignments from your professors"},
+    {"label": "MyCSU", "short": "MY", "url": "https://mycsu.csuohio.edu/",
+     "blurb": "Your CSU portal for email and other university tools"},
+]
