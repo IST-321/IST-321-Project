@@ -810,3 +810,10 @@
     });
   }
 })();
+
+/* Installable app: register the service worker (needs https, or localhost while testing) */
+if ("serviceWorker" in navigator && window.isSecureContext) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => { /* the site works the same without it */ });
+  });
+}
