@@ -206,13 +206,15 @@ def book_room():
     if lock:
         abort(409, description=lock)
     data = request.get_json(silent=True) or {}
-    room = ROOM_BY_ID.get(data.get("room"))
+    room = ROOM_BY_ID.get(data.get("room")) if isinstance(data.get("room"), str) else None
     if room is None:
         abort(400, description="Choose a room.")
     day, start = data.get("date"), data.get("time")
+    if not isinstance(day, str) or not isinstance(start, str):
+        abort(400, description="Choose a day and a time.")
     try:
         hours = int(data.get("hours", 1))
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         hours = 0
     if hours not in room["lengths"]:
         abort(400, description="Choose how long you need the room.")

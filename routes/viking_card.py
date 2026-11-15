@@ -263,6 +263,8 @@ def add_funds():
 def set_lock():
     sid = session["student_id"]
     locked = bool((request.get_json(silent=True) or {}).get("locked"))
+    if bool(_card(sid)["is_locked"]) == locked:
+        return jsonify(locked=locked)  # already that way (another tab, a double click): no second alert
     db = get_db()
     db.execute(
         "UPDATE viking_cards SET is_locked = ?, locked_at = ? WHERE student_id = ?",
@@ -360,7 +362,7 @@ def set_low_alert():
     sid = session["student_id"]
     try:
         days = int((request.get_json(silent=True) or {}).get("days"))
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         abort(400, description="Choose when to be warned.")
     if days not in dict(LOW_CHOICES):
         abort(400, description="Choose when to be warned.")

@@ -140,7 +140,7 @@ def _number(value, field, allow_empty=False):
         return None
     try:
         n = float(value)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         abort(400, description=f"Enter a number for {field}.")
     if not math.isfinite(n):
         abort(400, description=f"Enter a number for {field}.")
@@ -194,7 +194,13 @@ def update_item(item_id):
 def add_item():
     sid = session["student_id"]
     data = request.get_json(silent=True) or {}
-    cat = query_one("SELECT * FROM grade_categories WHERE id = ? AND student_id = ?", (data.get("category_id"), sid))
+    try:
+        category_id = int(data.get("category_id"))
+        if not 0 < category_id < 2**31:
+            raise ValueError
+    except (TypeError, ValueError, OverflowError):
+        abort(404, description="Choose a category.")
+    cat = query_one("SELECT * FROM grade_categories WHERE id = ? AND student_id = ?", (category_id, sid))
     if cat is None:
         abort(404, description="Choose a category.")
     title = " ".join(str(data.get("title", "")).split())[:80]
@@ -246,7 +252,7 @@ def save_setup(code):
             abort(400, description="Every section needs a name.")
         try:
             weight = int(sec.get("weight"))
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, OverflowError):
             abort(400, description=f"Give {name} a weight from 1 to 100.")
         if not 1 <= weight <= 100:
             abort(400, description=f"Give {name} a weight from 1 to 100.")

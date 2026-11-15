@@ -1,4 +1,5 @@
 """Sign in and sign out."""
+import time
 from datetime import timedelta
 
 from flask import (Blueprint, current_app, flash, make_response, redirect,
@@ -59,6 +60,7 @@ def login():
                 session.permanent = False  # cleared when the browser closes
                 session["student_id"] = student["student_id"]
                 session["boot"] = BOOT_ID
+                session["signed_in_at"] = time.time()  # the app's clock starts at 9:15 AM from here
                 session["just_signed_in"] = True
 
                 db = get_db()

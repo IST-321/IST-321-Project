@@ -36,7 +36,7 @@ class Config:
     # Reference date for the schedule and dashboard (project date).
     PROJECT_DATE = "2026-11-12"
 
-    # Time of day the app starts at each launch, so every run looks the same (9:15 AM is just
+    # Time of day the app starts at each sign in, so every run looks the same (9:15 AM is just
     # before BIO 100). The clock then runs normally from there. Set to None to use the computer's clock.
     PRESENT_TIME = "09:15"
 

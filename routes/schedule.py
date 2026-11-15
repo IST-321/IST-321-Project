@@ -455,9 +455,9 @@ EXPORT_PARTS = {"classes": "Classes", "assignments": "Assignment due dates", "pe
 ICS_DAYS = {"M": "MO", "T": "TU", "W": "WE", "R": "TH", "F": "FR", "S": "SA", "U": "SU"}
 
 
-def _ics_text(value):
-    """Escape text for an .ics field."""
-    return (value or "").replace("\\", "\\\\").replace(";", "\;").replace(",", "\\,").replace("\n", "\\n")
+def _ics_escape(value):
+    """Escape text for an .ics field (the import above uses _ics_text to undo this)."""
+    return (value or "").replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", "\\n")
 
 
 def _ics_stamp(day, hhmm):
@@ -481,14 +481,14 @@ def build_ics(sid, parts):
 
     def event(uid, title, start, end=None, location=None, description=None, extra=()):
         lines.extend(["BEGIN:VEVENT", f"UID:{uid}@vikinghub", f"DTSTAMP:{now}",
-                      f"SUMMARY:{_ics_text(title)}"])
+                      f"SUMMARY:{_ics_escape(title)}"])
         lines.extend(start)
         if end:
             lines.extend(end)
         if location:
-            lines.append(f"LOCATION:{_ics_text(location)}")
+            lines.append(f"LOCATION:{_ics_escape(location)}")
         if description:
-            lines.append(f"DESCRIPTION:{_ics_text(description)}")
+            lines.append(f"DESCRIPTION:{_ics_escape(description)}")
         lines.extend(extra)
         lines.append("END:VEVENT")
 

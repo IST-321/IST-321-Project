@@ -92,7 +92,7 @@ LINKS = {
     "vcard": ("Viking Card Office", "https://www.csuohio.edu/vikingcard"),
     "library": ("Michael Schwartz Library", "https://library.csuohio.edu/"),
     "elearning": ("Center for eLearning and Blackboard", "https://www.csuohio.edu/center-for-elearning/blackboard-login"),
-    "dining": ("Viking Food Co. menus and hours", "https://vikingfoodco.campusdish.com/"),
+    "dining": ("Viking Food Co. menus and hours", "https://vikingfoodco.mydininghub.com/en"),
     "belonging": ("Student Belonging and Success", "https://www.csuohio.edu/sbs/vikesbewell"),
     "rec": ("Campus Recreation", "https://csurec.com/"),
     "health": ("CSU Health Clinic", "https://www.csuohio.edu/health"),
@@ -215,7 +215,10 @@ def index():
 def add_pin():
     sid = session["student_id"]
     data = request.get_json(silent=True) or {}
-    code = (data.get("code") or "").upper() or None
+    code = data.get("code") or None
+    if code is not None and not isinstance(code, str):
+        abort(400, description="That building wasn't found.")
+    code = code.upper() if code else None
     label = " ".join(str(data.get("label") or "").split())[:40]
     if code:
         if code not in BUILDINGS:
@@ -227,7 +230,7 @@ def add_pin():
     else:
         try:
             x, y = float(data.get("x")), float(data.get("y"))
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, OverflowError):
             abort(400, description="Choose a spot on the map.")
         if not (0 <= x <= 680 and 0 <= y <= 395):
             abort(400, description="Choose a spot on the map.")

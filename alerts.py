@@ -36,16 +36,22 @@ def day_label(d):
 
 
 _LAUNCHED = datetime.now()
+# The clock never runs past 11:45 PM, so "today" never rolls over into the next day
+_MAX_RUN = timedelta(hours=14, minutes=30)
 
 
 def clock():
-    """The time of day. Starts at PRESENT_TIME when the app launches and runs on from there,
-    or follows the computer's clock when PRESENT_TIME is None."""
+    """The time of day. Starts at PRESENT_TIME and runs on from there, or follows the computer's
+    clock when PRESENT_TIME is None. It starts over at each sign in, so a server that has been
+    running for days (like PythonAnywhere) still opens at the same time of day for everyone."""
     start = current_app.config.get("PRESENT_TIME")
     if not start:
         return datetime.now()
+    began = _LAUNCHED
+    if has_request_context() and session.get("signed_in_at"):
+        began = datetime.fromtimestamp(session["signed_in_at"])
     h, m = map(int, start.split(":"))
-    elapsed = datetime.now() - _LAUNCHED
+    elapsed = min(max(datetime.now() - began, timedelta(0)), _MAX_RUN)
     return datetime.combine(date.today(), datetime.min.time()).replace(hour=h, minute=m) + elapsed
 
 

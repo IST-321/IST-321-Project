@@ -146,6 +146,19 @@
   }
 
   /* ---------- Home tiles: clicking a tile opens its page ---------- */
+  // The chevron becomes a real link so keyboard and screen reader users can open the tile too
+  $$("[data-panel-link]").forEach((tile) => {
+    const go = $(".tile-go", tile);
+    const chevron = go && go.lastElementChild;
+    if (!chevron || chevron.closest("a")) return;
+    const title = ($("h3", tile) || {}).textContent || "this section";
+    const link = document.createElement("a");
+    link.className = "tile-open";
+    link.href = tile.dataset.panelLink;
+    link.setAttribute("aria-label", `Open ${title.replace(/\(\d*\)/, "").trim()}`);
+    chevron.replaceWith(link);
+    link.append(chevron);
+  });
   document.addEventListener("click", (e) => {
     const tile = e.target.closest("[data-panel-link]");
     if (!tile || e.target.closest("a, button, input, [data-vcard], .alert-item")) return;

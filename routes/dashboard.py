@@ -278,6 +278,8 @@ def set_app_date():
     sid = session["student_id"]
     raw = (request.get_json(silent=True) or {}).get("date") or None
     default = current_app.config["PROJECT_DATE"]
+    if raw is not None and not isinstance(raw, str):
+        abort(400, description="Choose a date.")
     if raw:
         try:
             day = date.fromisoformat(raw)
